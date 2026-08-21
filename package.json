@@ -1,0 +1,13 @@
+{
+  "name": "graduate-yijing-divination",
+  "version": "1.0.0",
+  "private": true,
+  "description": "面向硕士、博士研究生的周易起卦参考：铜钱/时间/数字三种起卦，本卦·互卦·之卦，以及研究生场景化的 AI 解读。",
+  "scripts": {
+    "start": "node server.js",
+    "validate": "node validate-hexagrams.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

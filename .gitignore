@@ -1,0 +1,27 @@
+# 环境变量与密钥（绝不能提交到仓库）
+.env
+.env.*
+!.env.example
+
+# 依赖
+node_modules/
+
+# 本地工具配置（如 Claude Code）
+.claude/
+
+# 电子书等大文件 / 版权敏感文件（不入库）
+*.pdf
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+
+# 开发 / QA 临时产物
+.chrome-*/
+qa-*.png
+qa-*.json
+qa-*.cjs
+hexagrams-validation-report.json

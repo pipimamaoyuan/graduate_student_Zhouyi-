@@ -1,0 +1,184 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>研究生易占 · 周易起卦</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <aside class="panel controls" aria-label="起卦操作">
+          <div class="brand">
+            <div class="brand-left">
+              <span class="seal">易</span>
+              <div>
+                <h1>研究生易占</h1>
+                <p>面向硕士、博士研究生的周易参考：科研 · 导师 · 择业 · 心态。</p>
+              </div>
+            </div>
+            <button id="history-toggle" class="history-toggle" type="button">历史记录</button>
+          </div>
+
+          <div id="cast-mode" class="cast-mode" role="radiogroup" aria-label="起卦方式">
+            <button class="cast-mode-btn active" data-mode="coin" type="button" role="radio" aria-checked="true">铜钱起卦</button>
+            <button class="cast-mode-btn" data-mode="time" type="button" role="radio" aria-checked="false">时间起卦</button>
+            <button class="cast-mode-btn" data-mode="number" type="button" role="radio" aria-checked="false">数字起卦</button>
+          </div>
+
+          <section class="coin-caster" aria-label="起卦操作区">
+            <div class="casting-main">
+              <div class="question-fields">
+                <label class="field">
+                  <span>所问之事</span>
+                  <textarea id="question" rows="4" placeholder="例如：实验做不出来，要不要继续？"></textarea>
+                </label>
+
+                <div class="field">
+                  <span>问题场景（可选）</span>
+                  <div id="scenario-tags" class="scenario-tags" role="group" aria-label="选择问题场景"></div>
+                </div>
+              </div>
+
+              <div id="coin-scene" class="coin-scene" aria-hidden="true">
+                <div class="table-surface">
+                  <div class="coin-tray">
+                    <div class="coin" data-coin="0">阳</div>
+                    <div class="coin" data-coin="1">阴</div>
+                    <div class="coin" data-coin="2">阳</div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="time-panel" class="mode-panel" hidden>
+                <p class="mode-panel-title">时间起卦（梅花易数）</p>
+                <p class="mode-panel-desc">按当前公历年月日与地支时辰，推上下卦与动爻，一键成卦。</p>
+                <p id="time-info" class="mode-panel-info"></p>
+              </div>
+
+              <div id="number-panel" class="mode-panel" hidden>
+                <p class="mode-panel-title">数字起卦</p>
+                <p class="mode-panel-desc">输入两个正整数，分别推上卦、下卦，两数之和定动爻。</p>
+                <div class="number-inputs">
+                  <label class="field">
+                    <span>上卦数</span>
+                    <input id="num-upper" type="number" min="1" step="1" inputmode="numeric" placeholder="例如 6" />
+                  </label>
+                  <label class="field">
+                    <span>下卦数</span>
+                    <input id="num-lower" type="number" min="1" step="1" inputmode="numeric" placeholder="例如 8" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="casting-side">
+              <div class="cast-status">
+                <strong id="cast-step">准备摇初爻</strong>
+                <span id="cast-hint">每点一次摇出一爻，共六次。</span>
+              </div>
+
+              <div id="cast-preview" class="cast-preview" aria-label="已摇出的爻"></div>
+
+              <div class="action-row">
+                <button id="coin-toss" class="primary-action" type="button">摇第一下</button>
+                <button id="reset-cast" class="secondary-action" type="button">重新开始</button>
+              </div>
+
+              <ol id="coin-log" class="cast-log"></ol>
+            </div>
+          </section>
+        </aside>
+
+        <section class="reading" aria-live="polite">
+          <div class="result-head">
+            <div>
+              <p class="eyebrow">本卦</p>
+              <h2 id="primary-title">等待起卦</h2>
+            </div>
+            <div>
+              <p class="eyebrow">互卦</p>
+              <h2 id="mutual-title">未定</h2>
+            </div>
+            <div>
+              <p class="eyebrow">之卦</p>
+              <h2 id="changed-title">未定</h2>
+            </div>
+          </div>
+
+          <div class="hexagram-stage">
+            <div class="hexagram-block">
+              <div id="primary-hexagram" class="hexagram"></div>
+              <p id="primary-meta" class="hex-meta">请在左侧起卦。</p>
+            </div>
+            <div class="change-arrow" aria-hidden="true">→</div>
+            <div class="hexagram-block">
+              <div id="mutual-hexagram" class="hexagram"></div>
+              <p id="mutual-meta" class="hex-meta">互卦（过程）会在这里显示。</p>
+            </div>
+            <div class="change-arrow" aria-hidden="true">→</div>
+            <div class="hexagram-block">
+              <div id="changed-hexagram" class="hexagram"></div>
+              <p id="changed-meta" class="hex-meta">有动爻时，会在这里显示之卦。</p>
+            </div>
+          </div>
+
+          <div class="insight-grid">
+            <article class="panel text-panel wide compact-panel">
+              <h3>卦意</h3>
+              <p id="judgement" class="judgement-text">六爻摇完后，这里会显示卦辞方向和现实问题的切入点。</p>
+              <div id="judgement-keywords" class="keyword-list"></div>
+              <p id="offline-explain" class="offline-explain">离线白话解释会在成卦后显示。</p>
+              <p id="mutual-note" class="mutual-note"></p>
+            </article>
+            <article class="panel text-panel wide line-panel">
+              <h3>六爻</h3>
+              <div class="line-grid-head">
+                <span>静爻</span>
+                <span>动爻</span>
+              </div>
+              <div id="line-grid" class="line-grid">尚未起卦。</div>
+            </article>
+            <article class="panel text-panel wide ai-panel">
+              <div class="panel-title-row">
+                <h3>AI 解读</h3>
+                <button id="ai-interpret" class="secondary-action compact-action" type="button" disabled>AI 解读</button>
+              </div>
+              <p id="ai-output">完成六次起卦后，可请求 AI 生成个性化解读。</p>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="site-disclaimer">
+      本工具仅供传统文化学习与心理慰藉参考，不构成任何专业建议（包括医疗、心理、法律、职业决策等）。请理性看待结果，重要决定请咨询专业人士并尊重科学。
+    </footer>
+
+    <div id="history-modal" class="history-modal" hidden>
+      <div class="history-dialog" role="dialog" aria-modal="true" aria-labelledby="history-title">
+        <div class="history-head">
+          <h3 id="history-title">历史记录</h3>
+          <button id="history-close" class="history-close" type="button" aria-label="关闭">×</button>
+        </div>
+        <div id="history-list" class="history-list"></div>
+        <div class="history-actions">
+          <button id="history-clear" class="secondary-action history-clear" type="button">清空全部</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./hexagrams.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
