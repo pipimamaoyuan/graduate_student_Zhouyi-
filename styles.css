@@ -1563,10 +1563,10 @@ input[type="number"]:focus {
 
 .landing-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 28px;
   width: 100%;
-  max-width: 960px;
+  max-width: 1120px;
 }
 
 .landing-card {
@@ -1594,6 +1594,50 @@ input[type="number"]:focus {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.8;
+}
+
+.voice-status {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.voice-status.ready {
+  color: var(--green);
+  border-color: rgba(47, 102, 81, 0.4);
+}
+
+.voice-controls {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: end;
+  padding-top: 12px;
+}
+
+.voice-controls .field {
+  margin: 0;
+}
+
+.voice-record-btn {
+  min-height: 52px;
+  padding: 0 20px;
+  border: 1px solid var(--red);
+  border-radius: 999px;
+  background: rgba(163, 58, 43, 0.08);
+  color: var(--red);
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.voice-record-btn.recording {
+  background: var(--red);
+  color: #fffaf2;
 }
 
 .site-disclaimer {

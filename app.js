@@ -774,6 +774,8 @@ function setModule(module) {
   $("#landing-module").hidden = module !== "landing";
   $("#divination-module").hidden = module !== "divination";
   $("#treehole-module").hidden = module !== "treehole";
+  $("#voice-module").hidden = module !== "voice";
+  if (module === "voice") connectVoice();
 }
 
 function loadTreeholeEntries() {
@@ -1027,6 +1029,154 @@ async function submitTreehole() {
   }
 }
 
+// ---- 倾听树洞（实时语音 + 文字回退，长期记忆与心理树洞共用）----
+let voiceSocket = null;
+let voiceRecorder = null;
+let voiceStream = null;
+let voiceRecording = false;
+
+function renderVoiceAudienceTags() {
+  const container = $("#voice-audience-tags");
+  container.innerHTML = "";
+  AUDIENCE_OPTIONS.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "scenario-tag";
+    button.dataset.value = item.value;
+    button.textContent = item.label;
+    button.setAttribute("aria-pressed", item.value === "" ? "true" : "false");
+    if (item.value === "") button.classList.add("active");
+    container.appendChild(button);
+  });
+}
+
+function getVoiceAudience() {
+  const active = $("#voice-audience-tags .scenario-tag.active");
+  return active ? active.dataset.value : "";
+}
+
+function connectVoice() {
+  if (voiceSocket && (voiceSocket.readyState === WebSocket.OPEN || voiceSocket.readyState === WebSocket.CONNECTING)) return;
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  voiceSocket = new WebSocket(`${proto}//${location.host}/api/voice`);
+
+  voiceSocket.onopen = () => updateVoiceStatus("已连接，等待服务状态…", false);
+
+  voiceSocket.onmessage = (event) => {
+    if (typeof event.data === "string") {
+      let msg;
+      try { msg = JSON.parse(event.data); } catch (error) { return; }
+      if (msg.type === "status") {
+        updateVoiceStatus(msg.text, msg.voiceReady);
+      } else if (msg.type === "reply") {
+        removeVoiceThinking();
+        appendVoiceMessage("ai", msg.text);
+        if (msg.memory) saveMemory(msg.memory);
+      } else if (msg.type === "transcript") {
+        appendVoiceMessage("user", msg.text);
+      } else if (msg.type === "error") {
+        removeVoiceThinking();
+        appendVoiceMessage("ai", msg.text);
+      }
+    } else {
+      playVoiceAudio(event.data);
+    }
+  };
+
+  voiceSocket.onclose = () => updateVoiceStatus("连接已断开，切回本模块可重连。", false);
+  voiceSocket.onerror = () => updateVoiceStatus("连接出错，请刷新页面重试。", false);
+}
+
+function updateVoiceStatus(text, ready) {
+  const el = $("#voice-status");
+  el.textContent = text;
+  el.classList.toggle("ready", Boolean(ready));
+}
+
+function appendVoiceMessage(role, text) {
+  const thread = $("#voice-transcript");
+  const div = document.createElement("div");
+  div.className = `chat-msg ${role === "user" ? "user" : "ai"}`;
+  const bubble = document.createElement("div");
+  bubble.className = "chat-bubble";
+  bubble.textContent = text;
+  div.appendChild(bubble);
+  thread.appendChild(div);
+  const scroll = thread.closest(".treehole-scroll");
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function appendVoiceThinking() {
+  removeVoiceThinking();
+  const div = document.createElement("div");
+  div.className = "chat-msg ai thinking";
+  div.id = "voice-thinking";
+  div.innerHTML = `<div class="chat-bubble">AI 正在思考…</div>`;
+  $("#voice-transcript").appendChild(div);
+  const scroll = $("#voice-transcript").closest(".treehole-scroll");
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function removeVoiceThinking() {
+  const thinking = $("#voice-thinking");
+  if (thinking) thinking.remove();
+}
+
+function sendVoiceText() {
+  const input = $("#voice-input");
+  const text = input.value.trim();
+  if (!text) return;
+  if (!voiceSocket || voiceSocket.readyState !== WebSocket.OPEN) {
+    connectVoice();
+    return;
+  }
+  input.value = "";
+  appendVoiceMessage("user", text);
+  appendVoiceThinking();
+  voiceSocket.send(JSON.stringify({ type: "message", text, memory: loadMemory(), audience: getVoiceAudience() }));
+}
+
+async function startVoiceRecording() {
+  if (voiceRecording) return;
+  if (!voiceSocket || voiceSocket.readyState !== WebSocket.OPEN) return;
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceRecorder = new MediaRecorder(voiceStream);
+    voiceRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0 && voiceSocket && voiceSocket.readyState === WebSocket.OPEN) {
+        voiceSocket.send(event.data);
+      }
+    };
+    voiceRecorder.start(250);
+    voiceRecording = true;
+    $("#voice-record").classList.add("recording");
+    $("#voice-record").textContent = "松开结束";
+  } catch (error) {
+    updateVoiceStatus("无法访问麦克风，请检查浏览器权限。", false);
+  }
+}
+
+function stopVoiceRecording() {
+  if (!voiceRecording) return;
+  voiceRecording = false;
+  if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
+  if (voiceStream) voiceStream.getTracks().forEach((track) => track.stop());
+  $("#voice-record").classList.remove("recording");
+  $("#voice-record").textContent = "按住说话";
+}
+
+function playVoiceAudio(data) {
+  try {
+    const blob = new Blob([data], { type: "audio/wav" });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => URL.revokeObjectURL(url);
+    audio.play().catch(() => {});
+  } catch (error) {
+    // 播放失败不影响文字展示
+  }
+}
+
 function bindEvents() {
   $("#coin-toss").addEventListener("click", handlePrimaryAction);
   $("#reset-cast").addEventListener("click", resetCast);
@@ -1100,6 +1250,23 @@ function bindEvents() {
   $("#memory-edit").addEventListener("click", editMemory);
   $("#memory-save").addEventListener("click", saveMemoryEdit);
   $("#clear-treehole").addEventListener("click", clearTreeholeRecords);
+  $("#voice-send").addEventListener("click", sendVoiceText);
+  $("#voice-record").addEventListener("mousedown", startVoiceRecording);
+  $("#voice-record").addEventListener("mouseup", stopVoiceRecording);
+  $("#voice-record").addEventListener("touchstart", (event) => {
+    event.preventDefault();
+    startVoiceRecording();
+  });
+  $("#voice-record").addEventListener("touchend", stopVoiceRecording);
+  $("#voice-audience-tags").addEventListener("click", (event) => {
+    const tag = event.target.closest(".scenario-tag");
+    if (!tag) return;
+    $$("#voice-audience-tags .scenario-tag").forEach((btn) => {
+      const active = btn.dataset.value === tag.dataset.value;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  });
   $("#treehole-audience-tags").addEventListener("click", (event) => {
     const tag = event.target.closest(".scenario-tag");
     if (!tag) return;
@@ -1119,6 +1286,7 @@ function bindEvents() {
 renderAudienceTags();
 renderScenarioTags();
 renderTreeholeAudienceTags();
+renderVoiceAudienceTags();
 bindEvents();
 setCastMode("coin");
 resetCast();

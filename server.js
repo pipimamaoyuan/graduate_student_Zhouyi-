@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const { GRAD_SYSTEM_PROMPT, AUDIENCES, AUDIENCE_KEYS, SCENARIOS, buildScenarioPrompt } = require("./grad-context");
 const { buildCounselMessages, buildRememberMessages, parseCounselOutput, MAX_MEMORY_CHARS } = require("./counsel-context");
+const { WebSocketServer } = require("ws");
+const { voiceConfigured, transcribeAudio, synthesizeSpeech } = require("./voice-context");
 
 function parseEnvFile(filePath) {
   const values = {};
@@ -474,6 +476,58 @@ server.listen(PORT, () => {
   console.log(`Configured LLM providers: ${config.providers.length}`);
   console.log(config.providers.length ? "LLM provider chain is configured." : "LLM provider chain is not configured yet.");
   console.log("Changes to .env providers will be reloaded on each AI request.");
+});
+
+// 倾听树洞：实时语音/文字对话的 WebSocket 端点。
+const wss = new WebSocketServer({ server, path: "/api/voice" });
+
+wss.on("connection", (ws) => {
+  ws.send(JSON.stringify({
+    type: "status",
+    voiceReady: voiceConfigured(),
+    text: voiceConfigured()
+      ? "语音已就绪，开始对话吧。"
+      : "语音服务未配置（缺少 DASHSCOPE_API_KEY），当前为文字模式。"
+  }));
+
+  ws.on("message", async (data, isBinary) => {
+    if (isBinary) {
+      // 音频块 → 实时语音识别（占位，接入通义千问后生效）
+      try {
+        const text = await transcribeAudio(Buffer.from(data));
+        if (text) ws.send(JSON.stringify({ type: "transcript", text }));
+      } catch (error) {
+        // 忽略单块识别错误
+      }
+      return;
+    }
+
+    let msg;
+    try {
+      msg = JSON.parse(data.toString());
+    } catch (error) {
+      return;
+    }
+
+    if (msg.type === "message" && msg.text) {
+      try {
+        const payload = validateCounselPayload({
+          message: msg.text,
+          memory: msg.memory || "",
+          audience: msg.audience || ""
+        });
+        const result = await callCounsel(payload);
+        ws.send(JSON.stringify({ type: "reply", text: result.reply, memory: result.memory }));
+
+        const audio = await synthesizeSpeech(result.reply);
+        if (audio) ws.send(audio, { binary: true });
+      } catch (error) {
+        ws.send(JSON.stringify({ type: "error", text: error.message || "心理疏导暂时不可用" }));
+      }
+    }
+  });
+
+  ws.on("error", () => {});
 });
 
 

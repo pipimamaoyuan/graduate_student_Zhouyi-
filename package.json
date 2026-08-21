@@ -7,6 +7,9 @@
     "start": "node server.js",
     "validate": "node validate-hexagrams.cjs"
   },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
   "engines": {
     "node": ">=18"
   }

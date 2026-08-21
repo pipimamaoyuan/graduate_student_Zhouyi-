@@ -4,13 +4,13 @@
 
 Welcome!
 
-Two tools for **graduate students (master's & doctoral)** and **young university faculty**: one uses *Zhouyi* (I Ching) divination as a life reference, the other offers AI emotional support through a psychological tree-hole.
+Three tools for **graduate students (master's & doctoral)** and **young university faculty**: *Zhouyi* (I Ching) divination as a life reference, AI emotional support through a psychological tree-hole, and real-time voice venting through a voice tree-hole.
 
 > For traditional-culture study and emotional support only. This is not professional advice (medical, psychological, legal, or career). Please interpret results rationally.
 
 ## ✨ What's inside
 
-The project has two sub-features; the **landing page** lets you pick one:
+The project has three sub-features; the **landing page** lets you pick one:
 
 ### 1. Zhouyi Divination
 
@@ -31,9 +31,17 @@ A space to vent, or to talk with an AI emotional-support assistant.
 - **Long-term memory**: the AI maintains a "long-term user profile" that updates every session, so **you never have to re-tell your struggles** (re-telling itself can be re-traumatizing)
 - **Transparent & controllable**: view, edit, or clear your profile anytime
 
+### 3. Voice Treehole
+
+Talk to the AI emotional-support assistant by **voice**, like a phone call.
+
+- **Real-time voice conversation**: browser recording → Alibaba Qwen ASR → AI counseling → Qwen TTS → playback (falls back to text mode when the voice API isn't configured)
+- **Shared long-term memory**: the conversation text feeds the same user profile as the tree-hole
+- Same counseling functionality as "Mind Treehole", but via voice
+
 ## 🚀 Quick Start
 
-Requires Node.js ≥ 18. **Zero third-party dependencies** — no `npm install` needed.
+Requires Node.js ≥ 18. No third-party dependencies except `ws` for real-time voice; `npm install` once.
 
 ```bash
 # 1. Download / clone
@@ -92,6 +100,7 @@ app.js                   Casting interaction, three casting algorithms, scenario
 hexagrams.js             64 hexagrams, judgments, keywords, line texts, trigram mapping
 grad-context.js          Graduate/faculty scenario knowledge base (for divination prompts)
 counsel-context.js       Counseling prompts + long-term memory mechanism
+voice-context.js         Voice capability for the voice tree-hole (Qwen ASR/TTS placeholders)
 server.js                Node static server + three API endpoints
 validate-hexagrams.cjs   Hexagram data integrity check
 铜钱.m4a                 Coin sound effect (required at runtime; keep in root)
@@ -109,6 +118,14 @@ OPENAI_MODEL_1=gpt-4.1-mini
 ```
 
 Unnumbered configuration (`OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`) is also supported. Key/model changes take effect on the next request — no restart needed.
+
+The "Voice Treehole" uses Alibaba Qwen (DashScope) for voice; reserved:
+
+```env
+DASHSCOPE_API_KEY=your_qwen_voice_key
+```
+
+When unset, the voice tree-hole falls back to text mode and remains fully functional.
 
 Security parameters:
 
