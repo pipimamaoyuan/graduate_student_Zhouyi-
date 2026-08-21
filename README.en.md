@@ -2,6 +2,8 @@
 
 [中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
 
+Welcome!
+
 A *Zhouyi* (I Ching / Book of Changes) divination reference for **master's and doctoral (graduate) students**. Cast a hexagram with coins, time, or numbers to obtain the original · nuclear · transformed hexagrams, then receive a gentle, measured interpretation tailored to everyday graduate life — research, advisors, career choices, and mindset (offline plain-language reading + optional AI interpretation).
 
 > For traditional-culture study and emotional support only. This is not professional advice (medical, psychological, legal, or career). Please interpret results rationally.
