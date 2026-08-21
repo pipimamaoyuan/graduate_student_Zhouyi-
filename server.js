@@ -1,7 +1,7 @@
 ﻿const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { GRAD_SYSTEM_PROMPT, GRAD_SCENARIO_DETECT, GRAD_SCENARIO_GUIDE, SCENARIOS } = require("./grad-context");
+const { GRAD_SYSTEM_PROMPT, AUDIENCE_KEYS, SCENARIOS, buildScenarioPrompt } = require("./grad-context");
 
 function parseEnvFile(filePath) {
   const values = {};
@@ -190,8 +190,9 @@ function validateInterpretPayload(payload) {
     throw makeHttpError("动爻数据格式不正确。", 400);
   }
 
+  const audience = AUDIENCE_KEYS.includes(payload.audience) ? payload.audience : "";
   const scenario = SCENARIOS.includes(payload.scenario) ? payload.scenario : "";
-  return { ...payload, question, scenario };
+  return { ...payload, question, audience, scenario };
 }
 
 function sanitizeChineseText(text) {
@@ -227,10 +228,9 @@ function buildPrompt(payload) {
     ? payload.movingLines.map((line) => `${line.position}：${line.text}`).join("；")
     : "无动爻";
 
+  const audience = AUDIENCE_KEYS.includes(payload.audience) ? payload.audience : "";
   const scenario = SCENARIOS.includes(payload.scenario) ? payload.scenario : "";
-  const scenarioSection = scenario
-    ? `${GRAD_SCENARIO_GUIDE}\n\n用户已选择问题场景为「${scenario}」，请直接按该场景的解读角度展开。`
-    : `${GRAD_SCENARIO_DETECT}\n\n${GRAD_SCENARIO_GUIDE}`;
+  const scenarioSection = buildScenarioPrompt(audience, scenario);
 
   return [
     "请根据下面的参考内容，结合用户问题，写出一段自然、通俗、可直接给用户看的中文解读。",

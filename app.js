@@ -7,48 +7,98 @@
   currentResult: null,
   aiLoading: false,
   currentHistoryId: null,
-  castMode: "coin"
+  castMode: "coin",
+  audience: ""
 };
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-const SCENARIOS = [
+const AUDIENCE_OPTIONS = [
   { value: "", label: "自动" },
-  { value: "科研实验", label: "科研实验" },
-  { value: "导师关系", label: "导师关系" },
-  { value: "职业就业", label: "职业就业" },
-  { value: "生活日常", label: "生活日常" },
-  { value: "情感人际", label: "情感人际" },
-  { value: "心态成长", label: "心态成长" }
+  { value: "研究生", label: "研究生·博士生" },
+  { value: "青年教师", label: "青年高校教师" }
 ];
 
+const AUDIENCE_SCENARIOS = {
+  "研究生": [
+    { value: "学业科研", label: "学业科研" },
+    { value: "导师关系", label: "导师关系" },
+    { value: "经济生活", label: "经济生活" },
+    { value: "人际孤独", label: "人际孤独" },
+    { value: "就业发展", label: "就业发展" },
+    { value: "心态认同", label: "心态认同" }
+  ],
+  "青年教师": [
+    { value: "考核晋升", label: "考核晋升" },
+    { value: "教学学生", label: "教学学生" },
+    { value: "学术行政", label: "学术行政" },
+    { value: "经济生活", label: "经济生活" },
+    { value: "身份认同", label: "身份认同" },
+    { value: "家庭失衡", label: "家庭失衡" }
+  ]
+};
+
 const SCENARIO_OFFLINE_TIPS = {
-  "科研实验": "放到科研的处境里看，关键是分清哪些是你能控制的努力、哪些需要等时机：顺时就按部就班推进，不顺就先补短板、调整方法，别急着否定自己。",
-  "导师关系": "放到相处的处境里看，重在守正与沟通：守住自己的原则和底线，用理性沟通代替情绪对抗，必要时向学院、学校或可信的人求助。",
-  "职业就业": "放到择业的处境里看，卦象提示的是取向而非结论：对照自己更看重进取、安稳还是避险，结合真实处境再做权衡。",
-  "生活日常": "日常小事不必过度纠结，卦象只作轻松参考，跟着自己的直觉和心情走就好。",
-  "情感人际": "放到相处的处境里看，重在设身处地与边界感：多沟通、少猜疑，既不委屈自己，也不勉强别人。",
-  "心态成长": "放到心态的处境里看，眼下更需要稳住节奏：允许自己慢一点，把大目标拆成眼前的小事，一步一步来。"
+  "学业科研": "放到学业科研的处境里看，重点是分清哪些是你能控制的努力、哪些要等时机：顺时就推进、主动请教，不顺就先补短板、把目标拆小，别急着否定自己。",
+  "导师关系": "放到师生相处的处境里看，重在守正与自保：守住原则与底线，用理性沟通代替情绪对抗，必要时向学院、学校或可信的人求助。",
+  "经济生活": "放到经济的处境里看，眼下的拮据或落差是真实的：量入为出、做长期规划，看到当下投入或积累的长期价值，别为一时的钱透支健康。",
+  "人际孤独": "放到人际的处境里看，孤独不是你的错：可以主动但有边界地走出去一小步，同门或同事相处和而不同，亲密关系重在沟通。",
+  "就业发展": "放到择业的处境里看，卦象提示的是取向而非结论：对照自己更看重进取、安稳还是避险，梳理沉没成本与真实意愿，再理性权衡。",
+  "心态认同": "放到心态的处境里看，眼下更需要稳住节奏：把「我不适合」换成「我遇到了什么具体困难」，允许自己慢一点，先动一小步。",
+  "考核晋升": "放到考核晋升的处境里看，制度性压力是真实的：分清可控的努力与不可控的规则，顺时打磨本子、主动合作，逆时调整节奏、留好后路。",
+  "教学学生": "放到教学的处境里看，重在初心与边界的平衡：不必两头自责，学生沟通因材施教、留出边界，找到教学与科研的节奏。",
+  "学术行政": "放到学术生态的处境里看，对规则的失望是正常的：守住初心，适应规则的同时保护真正的科研时间，在制度内找自主空间。",
+  "身份认同": "放到身份转换的处境里看，过渡期的笨拙与孤独都是正常的：接纳它，主动寻找同行支持，重新定义自己作为学者与教师的身份。",
+  "家庭失衡": "放到工作与生活的处境里看，可持续比透支更重要：给家庭、健康和自我留出时间，把节奏拉长，别让短期指标耗尽长期的自己。"
 };
 
 function getSelectedScenario() {
-  const active = $(".scenario-tag.active");
+  const active = $("#scenario-tags .scenario-tag.active");
   return active ? active.dataset.value : "";
 }
 
 function setScenario(value) {
-  $$(".scenario-tag").forEach((tag) => {
+  $$("#scenario-tags .scenario-tag").forEach((tag) => {
     const active = tag.dataset.value === value;
     tag.classList.toggle("active", active);
     tag.setAttribute("aria-pressed", active ? "true" : "false");
   });
 }
 
+function getSelectedAudience() {
+  const active = $("#audience-tags .scenario-tag.active");
+  return active ? active.dataset.value : "";
+}
+
+function setAudience(value) {
+  $$("#audience-tags .scenario-tag").forEach((tag) => {
+    const active = tag.dataset.value === value;
+    tag.classList.toggle("active", active);
+    tag.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
+function renderAudienceTags() {
+  const container = $("#audience-tags");
+  container.innerHTML = "";
+  AUDIENCE_OPTIONS.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "scenario-tag";
+    button.dataset.value = item.value;
+    button.textContent = item.label;
+    button.setAttribute("aria-pressed", item.value === "" ? "true" : "false");
+    if (item.value === "") button.classList.add("active");
+    container.appendChild(button);
+  });
+}
+
 function renderScenarioTags() {
   const container = $("#scenario-tags");
   container.innerHTML = "";
-  SCENARIOS.forEach((item) => {
+  const list = [{ value: "", label: "自动" }].concat(AUDIENCE_SCENARIOS[getSelectedAudience()] || []);
+  list.forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "scenario-tag";
@@ -108,6 +158,7 @@ function recordHistory() {
     id,
     time: id,
     question: $("#question").value.trim(),
+    audience: getSelectedAudience(),
     scenario: getSelectedScenario(),
     lines: state.lines.slice(),
     moving: state.moving.slice(),
@@ -145,6 +196,8 @@ function restoreHistoryEntry(id) {
   state.currentHistoryId = entry.id;
 
   $("#question").value = entry.question || "";
+  setAudience(entry.audience || "");
+  renderScenarioTags();
   setScenario(entry.scenario || "");
 
   updateReading(state.lines, state.moving);
@@ -169,7 +222,7 @@ function renderHistoryList() {
     const primary = HEXAGRAMS[e.lines.join("")];
     const name = primary ? `${primary.number}. ${primary.name}` : "未知卦";
     const question = e.question || "（未填写问题）";
-    const meta = [e.scenario, formatHistoryTime(e.time), e.ai ? "已AI解读" : ""].filter(Boolean).join(" · ");
+    const meta = [e.audience, e.scenario, formatHistoryTime(e.time), e.ai ? "已AI解读" : ""].filter(Boolean).join(" · ");
     return `
       <div class="history-item" data-id="${e.id}">
         <span class="history-q">${escapeHtml(question)} · ${escapeHtml(name)}</span>
@@ -633,6 +686,7 @@ function buildAiPayload() {
   const { primary, changedHex, mutualHex } = state.currentResult;
   return {
     question: $("#question").value.trim(),
+    audience: getSelectedAudience(),
     scenario: getSelectedScenario(),
     lines: state.lines,
     movingLineIndexes: state.moving,
@@ -714,6 +768,13 @@ function bindEvents() {
   $("#question").addEventListener("input", () => {
     if (state.finished) refreshOfflineExplanation();
   });
+  $("#audience-tags").addEventListener("click", (event) => {
+    const tag = event.target.closest(".scenario-tag");
+    if (!tag) return;
+    setAudience(tag.dataset.value);
+    renderScenarioTags();
+    if (state.finished) refreshOfflineExplanation();
+  });
   $("#scenario-tags").addEventListener("click", (event) => {
     const tag = event.target.closest(".scenario-tag");
     if (!tag) return;
@@ -756,6 +817,7 @@ function bindEvents() {
   });
 }
 
+renderAudienceTags();
 renderScenarioTags();
 bindEvents();
 setCastMode("coin");

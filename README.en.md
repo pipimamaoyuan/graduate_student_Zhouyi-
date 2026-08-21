@@ -1,10 +1,10 @@
-# Graduate Yijing Divination · Zhouyi Casting
+# Academic Yijing Divination · Zhouyi Casting
 
 [中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
 
 Welcome!
 
-A *Zhouyi* (I Ching / Book of Changes) divination reference for **master's and doctoral (graduate) students**. Cast a hexagram with coins, time, or numbers to obtain the original · nuclear · transformed hexagrams, then receive a gentle, measured interpretation tailored to everyday graduate life — research, advisors, career choices, and mindset (offline plain-language reading + optional AI interpretation).
+A *Zhouyi* (I Ching / Book of Changes) divination reference for **graduate students (master's and doctoral)** and **young university faculty**. Cast a hexagram with coins, time, or numbers to obtain the original · nuclear · transformed hexagrams, then receive a gentle, measured interpretation tailored to everyday academic life — research, advisors, career, evaluation, teaching, and mindset (offline plain-language reading + optional AI interpretation).
 
 > For traditional-culture study and emotional support only. This is not professional advice (medical, psychological, legal, or career). Please interpret results rationally.
 
@@ -12,7 +12,7 @@ A *Zhouyi* (I Ching / Book of Changes) divination reference for **master's and d
 
 - **Three casting methods**: coin casting (toss six times), time casting (Meihua Yishu), number casting (report two numbers)
 - **Three hexagrams at once**: original (present) → nuclear (process) → transformed (outcome)
-- **Graduate scenarios**: choose from "research / advisor / career / daily life / relationships / mindset", or auto-detect
+- **Audiences & scenarios**: choose "graduate student / young faculty" and a fine-grained scenario (e.g. advisor relationship / evaluation & promotion), or auto-detect
 - **AI interpretation**: OpenAI-compatible models with multi-key failover; works offline without a key
 - **History**: saves the last 50 readings locally (view / delete)
 - **Zero dependencies**: vanilla HTML/CSS/JS + Node.js built-ins; no `npm install` needed
@@ -50,14 +50,13 @@ Open <http://localhost:3000> in a browser.
 - **Nuclear hexagram (互卦)**: formed from lines 2/3/4 (lower) and 3/4/5 (upper) of the original; reveals the inner dynamics of the process
 - **Transformed hexagram (之卦)**: derived from the moving lines; reveals the direction of change
 
-## 🎓 Graduate Scenarios
+## 🎓 Audiences & Scenarios
 
-Pick a scenario next to your question (defaults to "Auto"). Once selected, the backend frames the reading in the language of graduate life:
+Pick your identity ("graduate student" / "young faculty", defaults to "Auto") and then a scenario. Once selected, the backend frames the reading in that audience's language.
 
-- **Research**: reframes "success/failure" as "timing and preparation", with concrete, actionable steps
-- **Advisor relationship**: integrity, self-protection, rational communication, clear boundaries
-- **Career**: offers decision dimensions rather than making the choice for you
-- **Daily life / Relationships / Mindset**: light, gentle, stress-relieving
+**Graduate students (master's / doctoral)**: research & studies · advisor relationship · finances · social isolation · career · mindset
+
+**Young faculty**: evaluation & promotion · teaching & students · academic bureaucracy · finances · identity · work-life balance
 
 ## 📁 Project Structure
 
