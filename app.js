@@ -11,6 +11,9 @@
   audience: ""
 };
 
+let currentModule = "divination";
+let treeholeMode = "vent";
+
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -622,7 +625,7 @@ function castHintText() {
 
 function setCastMode(mode) {
   state.castMode = mode;
-  $$(".cast-mode-btn").forEach((btn) => {
+  $$("#cast-mode .cast-mode-btn").forEach((btn) => {
     const active = btn.dataset.mode === mode;
     btn.classList.toggle("active", active);
     btn.setAttribute("aria-checked", active ? "true" : "false");
@@ -756,6 +759,274 @@ async function requestAiInterpretation() {
   }
 }
 
+// ---- 心理树洞 ----
+const TREEHOLE_ENTRIES_KEY = "treehole-entries-v1";
+const TREEHOLE_CHAT_KEY = "treehole-chat-v1";
+const TREEHOLE_MEMORY_KEY = "treehole-memory-v1";
+
+function setModule(module) {
+  currentModule = module;
+  $$(".nav-btn").forEach((btn) => {
+    const active = btn.dataset.module === module;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  $("#landing-module").hidden = module !== "landing";
+  $("#divination-module").hidden = module !== "divination";
+  $("#treehole-module").hidden = module !== "treehole";
+}
+
+function loadTreeholeEntries() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(TREEHOLE_ENTRIES_KEY));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) { return []; }
+}
+
+function saveTreeholeEntries(entries) {
+  try { localStorage.setItem(TREEHOLE_ENTRIES_KEY, JSON.stringify(entries)); } catch (error) {}
+}
+
+function loadTreeholeChat() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(TREEHOLE_CHAT_KEY));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) { return []; }
+}
+
+function saveTreeholeChat(chat) {
+  try { localStorage.setItem(TREEHOLE_CHAT_KEY, JSON.stringify(chat)); } catch (error) {}
+}
+
+function loadMemory() {
+  try { return localStorage.getItem(TREEHOLE_MEMORY_KEY) || ""; } catch (error) { return ""; }
+}
+
+function saveMemory(memory) {
+  try { localStorage.setItem(TREEHOLE_MEMORY_KEY, memory || ""); } catch (error) {}
+}
+
+function setTreeholeMode(mode) {
+  treeholeMode = mode;
+  $$("#treehole-mode .cast-mode-btn").forEach((btn) => {
+    const active = btn.dataset.mode === mode;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-checked", active ? "true" : "false");
+  });
+  $("#memory-toggle-row").hidden = mode !== "vent";
+  $("#chat-thread").hidden = mode !== "chat";
+  $("#vent-list").hidden = mode === "chat";
+  $("#treehole-prompt").textContent = mode === "vent" ? "写下此刻的心情…" : "和 AI 聊聊你的处境…";
+  $("#treehole-submit").textContent = mode === "vent" ? "投进树洞" : "发送";
+  $("#treehole-content-title").textContent = mode === "vent" ? "倾诉记录" : "对话记录";
+  renderVentList();
+  renderChatThread();
+}
+
+function renderVentList() {
+  const entries = loadTreeholeEntries();
+  const list = $("#vent-list");
+  if (!entries.length) {
+    list.innerHTML = `<div class="treehole-empty">还没有倾诉过。写点什么，把它投进树洞吧。</div>`;
+    return;
+  }
+  list.innerHTML = entries.map((e) => `
+    <div class="vent-item">
+      <div class="vent-meta">${escapeHtml(formatHistoryTime(e.time))}</div>
+      <div class="vent-text">${escapeHtml(e.text)}</div>
+    </div>
+  `).join("");
+}
+
+function appendChatMessage(role, text) {
+  const chat = loadTreeholeChat();
+  chat.push({ id: Date.now(), time: Date.now(), role, text });
+  if (chat.length > 200) chat.splice(0, chat.length - 200);
+  saveTreeholeChat(chat);
+  renderChatThread();
+}
+
+function renderChatThread() {
+  const chat = loadTreeholeChat();
+  const thread = $("#chat-thread");
+  if (!chat.length) {
+    thread.innerHTML = `<div class="treehole-empty">在这里和 AI 聊聊。它会结合你的长期记忆，帮你理清处境。</div>`;
+    return;
+  }
+  thread.innerHTML = chat.map((m) => `
+    <div class="chat-msg ${m.role === "user" ? "user" : "ai"}">
+      <div class="chat-bubble">${escapeHtml(m.text)}</div>
+    </div>
+  `).join("");
+  const scroll = $(".treehole-scroll");
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function showThinking() {
+  hideThinking();
+  const bubble = document.createElement("div");
+  bubble.className = "chat-msg ai thinking";
+  bubble.id = "ai-thinking";
+  bubble.innerHTML = `<div class="chat-bubble">AI 正在思考…</div>`;
+  $("#chat-thread").appendChild(bubble);
+  const scroll = $(".treehole-scroll");
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function hideThinking() {
+  const thinking = $("#ai-thinking");
+  if (thinking) thinking.remove();
+}
+
+function renderMemory() {
+  $("#memory-content").value = loadMemory() || "（暂无记忆）";
+}
+
+function toggleMemory() {
+  const content = $("#memory-content");
+  const actions = $("#memory-actions");
+  const show = content.hidden;
+  content.hidden = !show;
+  actions.hidden = !show;
+  $("#memory-toggle").textContent = show ? "收起" : "查看";
+  if (show) renderMemory();
+}
+
+function editMemory() {
+  const content = $("#memory-content");
+  const willEdit = content.readOnly;
+  content.readOnly = !willEdit;
+  $("#memory-save").hidden = !willEdit;
+  $("#memory-edit").textContent = willEdit ? "取消" : "编辑";
+  if (willEdit) {
+    content.focus();
+  } else {
+    content.value = loadMemory() || "（暂无记忆）";
+  }
+}
+
+function saveMemoryEdit() {
+  const content = $("#memory-content");
+  saveMemory(content.value.trim());
+  content.readOnly = true;
+  $("#memory-save").hidden = true;
+  $("#memory-edit").textContent = "编辑";
+  renderMemory();
+}
+
+function clearMemory() {
+  if (!confirm("确定清空 AI 对你的长期记忆吗？")) return;
+  saveMemory("");
+  renderMemory();
+}
+
+const CRISIS_KEYWORDS = ["自杀", "不想活", "活不下去", "想死", "一了百了", "结束生命", "自残", "自伤", "割腕", "轻生", "不想存在", "消失算了", "活着没意思", "死了算了", "了断"];
+
+function hasCrisisContent(text) {
+  return CRISIS_KEYWORDS.some((kw) => text.includes(kw));
+}
+
+function showCrisisNotice() {
+  const notice = $("#crisis-notice");
+  notice.hidden = false;
+  notice.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function renderTreeholeAudienceTags() {
+  const container = $("#treehole-audience-tags");
+  container.innerHTML = "";
+  AUDIENCE_OPTIONS.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "scenario-tag";
+    button.dataset.value = item.value;
+    button.textContent = item.label;
+    button.setAttribute("aria-pressed", item.value === "" ? "true" : "false");
+    if (item.value === "") button.classList.add("active");
+    container.appendChild(button);
+  });
+}
+
+function getTreeholeAudience() {
+  const active = $("#treehole-audience-tags .scenario-tag.active");
+  return active ? active.dataset.value : "";
+}
+
+function clearTreeholeRecords() {
+  if (treeholeMode === "vent") {
+    if (!confirm("确定清空所有倾诉记录吗？")) return;
+    saveTreeholeEntries([]);
+    renderVentList();
+  } else {
+    if (!confirm("确定清空所有对话记录吗？")) return;
+    saveTreeholeChat([]);
+    renderChatThread();
+  }
+}
+
+async function submitTreehole() {
+  const input = $("#treehole-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const audience = getTreeholeAudience();
+
+  if (hasCrisisContent(text)) showCrisisNotice();
+
+  if (treeholeMode === "vent") {
+    const entries = loadTreeholeEntries();
+    entries.unshift({ id: Date.now(), time: Date.now(), text });
+    if (entries.length > 100) entries.length = 100;
+    saveTreeholeEntries(entries);
+    input.value = "";
+    renderVentList();
+
+    if ($("#memory-update-check").checked) {
+      try {
+        const res = await fetch("/api/remember", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, memory: loadMemory(), audience })
+        });
+        const data = await res.json();
+        if (res.ok && data.memory) {
+          saveMemory(data.memory);
+          renderMemory();
+        }
+      } catch (error) {
+        // 记忆更新失败不影响倾诉本身
+      }
+    }
+  } else {
+    $("#treehole-submit").disabled = true;
+    $("#treehole-submit").textContent = "发送中…";
+    input.value = "";
+    appendChatMessage("user", text);
+    showThinking();
+    try {
+      const res = await fetch("/api/counsel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, memory: loadMemory(), audience })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "心理疏导暂时不可用");
+      }
+      appendChatMessage("ai", data.reply || "");
+      if (data.memory) {
+        saveMemory(data.memory);
+        renderMemory();
+      }
+    } catch (error) {
+      appendChatMessage("ai", `暂时无法回复：${error.message}`);
+    } finally {
+      hideThinking();
+      $("#treehole-submit").disabled = false;
+      $("#treehole-submit").textContent = "发送";
+    }
+  }
+}
+
 function bindEvents() {
   $("#coin-toss").addEventListener("click", handlePrimaryAction);
   $("#reset-cast").addEventListener("click", resetCast);
@@ -810,6 +1081,34 @@ function bindEvents() {
     renderHistoryList();
     refreshHistoryCount();
   });
+  $("#top-nav").addEventListener("click", (event) => {
+    const btn = event.target.closest(".nav-btn");
+    if (!btn) return;
+    setModule(btn.dataset.module);
+  });
+  $$(".landing-card").forEach((card) => {
+    card.addEventListener("click", () => setModule(card.dataset.module));
+  });
+  $("#treehole-mode").addEventListener("click", (event) => {
+    const btn = event.target.closest(".cast-mode-btn");
+    if (!btn) return;
+    setTreeholeMode(btn.dataset.mode);
+  });
+  $("#treehole-submit").addEventListener("click", submitTreehole);
+  $("#memory-toggle").addEventListener("click", toggleMemory);
+  $("#memory-clear").addEventListener("click", clearMemory);
+  $("#memory-edit").addEventListener("click", editMemory);
+  $("#memory-save").addEventListener("click", saveMemoryEdit);
+  $("#clear-treehole").addEventListener("click", clearTreeholeRecords);
+  $("#treehole-audience-tags").addEventListener("click", (event) => {
+    const tag = event.target.closest(".scenario-tag");
+    if (!tag) return;
+    $$("#treehole-audience-tags .scenario-tag").forEach((btn) => {
+      const active = btn.dataset.value === tag.dataset.value;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !$("#history-modal").hidden) {
       $("#history-modal").hidden = true;
@@ -819,10 +1118,14 @@ function bindEvents() {
 
 renderAudienceTags();
 renderScenarioTags();
+renderTreeholeAudienceTags();
 bindEvents();
 setCastMode("coin");
 resetCast();
 refreshHistoryCount();
+setModule("landing");
+setTreeholeMode("vent");
+renderMemory();
 
 
 

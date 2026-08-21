@@ -1211,6 +1211,391 @@ input[type="number"]:focus {
   line-height: 1.7;
 }
 
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 252, 245, 0.9);
+}
+
+.nav-btn {
+  min-height: 40px;
+  padding: 0 22px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.nav-btn.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fffaf2;
+}
+
+.treehole-shell {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.treehole-workspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.32fr) minmax(0, 1fr);
+  gap: 22px;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  align-items: stretch;
+  height: calc(100vh - 150px);
+}
+
+.treehole-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 22px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.treehole-brand h2 {
+  font-size: 26px;
+}
+
+.treehole-brand p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+#treehole-input {
+  height: auto;
+  min-height: 60px;
+  max-height: 200px;
+  resize: vertical;
+}
+
+.treehole-memory-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.treehole-safety {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.treehole-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.treehole-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 252, 245, 0.5);
+  overflow-y: auto;
+}
+
+.treehole-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.treehole-scroll::-webkit-scrollbar-thumb {
+  background: rgba(116, 106, 93, 0.35);
+  border-radius: 4px;
+}
+
+.treehole-inputbar {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: end;
+  padding-top: 12px;
+}
+
+.treehole-inputbar .field {
+  margin: 0;
+}
+
+.treehole-empty {
+  padding: 40px 16px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.7;
+}
+
+.vent-list {
+  display: grid;
+  gap: 12px;
+}
+
+.vent-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.vent-meta {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.vent-text {
+  color: var(--ink);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.chat-thread {
+  display: grid;
+  gap: 12px;
+}
+
+.chat-msg {
+  display: flex;
+}
+
+.chat-msg.user {
+  justify-content: flex-end;
+}
+
+.chat-msg.ai {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  font-size: 15px;
+}
+
+.chat-msg.user .chat-bubble {
+  background: var(--ink);
+  color: #fffaf2;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-msg.ai .chat-bubble {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+
+.chat-msg.thinking .chat-bubble {
+  color: var(--muted);
+  animation: thinking-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.treehole-memory {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 20px;
+}
+
+.memory-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.memory-head h3 {
+  margin: 0;
+}
+
+.memory-hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.memory-content {
+  max-height: 40vh;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow: auto;
+}
+
+.memory-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.memory-actions .secondary-action {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+}
+
+@media (max-width: 900px) {
+  .treehole-workspace {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .treehole-side {
+    overflow: visible;
+  }
+
+  .treehole-scroll {
+    max-height: 55vh;
+  }
+}
+
+.vent-list[hidden],
+.chat-thread[hidden],
+.treehole-memory-toggle[hidden],
+.memory-actions[hidden],
+.crisis-notice[hidden] {
+  display: none;
+}
+
+.treehole-content-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.treehole-content-head span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.treehole-privacy {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.crisis-notice {
+  padding: 12px 14px;
+  border: 1px solid rgba(163, 58, 43, 0.5);
+  border-radius: 6px;
+  background: rgba(163, 58, 43, 0.08);
+  color: var(--red);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.memory-content {
+  width: 100%;
+  resize: vertical;
+}
+
+.landing-shell {
+  min-height: calc(100vh - 70px);
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 64px;
+  padding: 80px 24px 40px;
+}
+
+.landing-shell[hidden] {
+  display: none;
+}
+
+.landing-brand {
+  text-align: center;
+}
+
+.landing-brand h1 {
+  font-size: 54px;
+  font-family: "KaiTi", "STKaiti", serif;
+}
+
+.landing-brand p {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 19px;
+}
+
+.landing-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
+  width: 100%;
+  max-width: 960px;
+}
+
+.landing-card {
+  padding: 38px 34px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 252, 245, 0.7);
+  box-shadow: var(--shadow);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.landing-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+}
+
+.landing-card h2 {
+  margin-bottom: 12px;
+  font-size: 26px;
+}
+
+.landing-card p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
 .site-disclaimer {
   max-width: 960px;
   margin: 0 auto;

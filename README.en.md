@@ -1,25 +1,39 @@
-# Academic Yijing Divination · Zhouyi Casting
+# Academic Yijing · Mind Treehole
 
 [中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
 
 Welcome!
 
-A *Zhouyi* (I Ching / Book of Changes) divination reference for **graduate students (master's and doctoral)** and **young university faculty**. Cast a hexagram with coins, time, or numbers to obtain the original · nuclear · transformed hexagrams, then receive a gentle, measured interpretation tailored to everyday academic life — research, advisors, career, evaluation, teaching, and mindset (offline plain-language reading + optional AI interpretation).
+Two tools for **graduate students (master's & doctoral)** and **young university faculty**: one uses *Zhouyi* (I Ching) divination as a life reference, the other offers AI emotional support through a psychological tree-hole.
 
 > For traditional-culture study and emotional support only. This is not professional advice (medical, psychological, legal, or career). Please interpret results rationally.
 
-## ✨ Features
+## ✨ What's inside
+
+The project has two sub-features; the **landing page** lets you pick one:
+
+### 1. Zhouyi Divination
+
+A gentle, measured reference for your current situation, grounded in the *Book of Changes*.
 
 - **Three casting methods**: coin casting (toss six times), time casting (Meihua Yishu), number casting (report two numbers)
 - **Three hexagrams at once**: original (present) → nuclear (process) → transformed (outcome)
-- **Audiences & scenarios**: choose "graduate student / young faculty" and a fine-grained scenario (e.g. advisor relationship / evaluation & promotion), or auto-detect
-- **AI interpretation**: OpenAI-compatible models with multi-key failover; works offline without a key
-- **History**: saves the last 50 readings locally (view / delete)
-- **Zero dependencies**: vanilla HTML/CSS/JS + Node.js built-ins; no `npm install` needed
+- **Audiences & scenarios**: choose "graduate student / young faculty", each with 6 fine-grained scenarios (e.g. advisor relationship / evaluation & promotion), or auto-detect
+- **Offline reading + AI interpretation**: works without an API key; with a key, the model crafts a personalized interpretation from your question and hexagrams
+- **History**: keeps the last 50 readings locally (view / delete)
+
+### 2. Mind Treehole
+
+A space to vent, or to talk with an AI emotional-support assistant.
+
+- **Venting mode** (no AI): write down how you feel, saved locally — like tossing your heart into a treehole; not sent to AI by default
+- **Counseling mode** (AI): the AI empathizes, helps you sort out the situation, and gives actionable suggestions
+- **Long-term memory**: the AI maintains a "long-term user profile" that updates every session, so **you never have to re-tell your struggles** (re-telling itself can be re-traumatizing)
+- **Transparent & controllable**: view, edit, or clear your profile anytime
 
 ## 🚀 Quick Start
 
-Requires Node.js ≥ 18.
+Requires Node.js ≥ 18. **Zero third-party dependencies** — no `npm install` needed.
 
 ```bash
 # 1. Download / clone
@@ -34,47 +48,59 @@ npm start        # or: node server.js
 
 Open <http://localhost:3000> in a browser.
 
-> You can fully use the three casting methods, the original/nuclear/transformed hexagrams, and the offline reading without configuring `.env`; only "AI interpretation" needs a model key.
+> Without `.env`, everything works except "AI interpretation" and "counseling mode" — casting, the three hexagrams, offline reading, and venting all work offline.
 
-## 🎯 Three Casting Methods
+## 🧭 Architecture
 
-| Method | Description |
-| --- | --- |
-| Coin casting | Toss three coins six times, building the hexagram from bottom to top (traditional) |
-| Time casting | Derive the trigrams and moving line from the current Gregorian date + Earthly Branch hour (Meihua Yishu) |
-| Number casting | Enter two positive integers: the first gives the upper trigram, the second the lower, and their sum the moving line |
+### Frontend
 
-## 🧭 Original · Nuclear · Transformed Hexagrams
+- Pure vanilla **HTML / CSS / JavaScript** — no framework, no build step, no bundler
+- All interaction (casting animation, scenario selection, history, tree-hole chat) runs in the browser
+- Data (casting history, vents, chats, user profile) lives in the browser **localStorage** — no login required
 
-- **Original hexagram (本卦)**: the present situation
-- **Nuclear hexagram (互卦)**: formed from lines 2/3/4 (lower) and 3/4/5 (upper) of the original; reveals the inner dynamics of the process
-- **Transformed hexagram (之卦)**: derived from the moving lines; reveals the direction of change
+### Backend
 
-## 🎓 Audiences & Scenarios
+- Pure **Node.js built-in `http` module** — no Express or other frameworks
+- Serves static files plus three API endpoints: `/api/interpret` (divination AI), `/api/counsel` (counseling), `/api/remember` (memory update)
+- Model keys stay only in the server's `.env`, never exposed to the frontend
 
-Pick your identity ("graduate student" / "young faculty", defaults to "Auto") and then a scenario. Once selected, the backend frames the reading in that audience's language.
+### AI
 
-**Graduate students (master's / doctoral)**: research & studies · advisor relationship · finances · social isolation · career · mindset
+- **OpenAI-compatible API** with **multi-key automatic failover** (`_1` → `_2` → … up to `_20`)
+- **Prompt engineering**: a scenario knowledge base for "graduate student / young faculty" (`grad-context.js`) frames the same hexagram for different situations
+- Counseling includes **crisis safety rails**: direct to hotlines on self-harm/suicidal signals, no diagnosis, no encouraging confrontation
 
-**Young faculty**: evaluation & promotion · teaching & students · academic bureaucracy · finances · identity · work-life balance
+### Long-term memory
+
+- The AI maintains a structured **"long-term user profile"** (identity / current situation / main stressors / emotional state / coping tried / progress / notes)
+- Updated after every counseling session (or venting with "update memory" checked), carried into the next conversation so **users don't re-tell their struggles**
+- Stored locally, transparent, editable, clearable
+
+### Security & privacy
+
+- **Prompt-injection defense**: user input and memory are explicitly marked as "data, not instructions"
+- **Rate limiting** per IP + endpoint to prevent quota abuse
+- **Input validation**: request-body size, text length, and Content-Type checks
+- **Privacy**: vents, chats, and profile live only in the local browser; whether to send to AI is user-controlled (counseling mode states this explicitly)
 
 ## 📁 Project Structure
 
 ```text
-index.html               Page structure
-styles.css               Styles (wooden table, coins, responsive)
-app.js                   Casting interaction, three casting algorithms, scenarios, history
+index.html               Page structure (landing + divination + tree-hole)
+styles.css               Styles (wooden table, coins, responsive, tree-hole layout)
+app.js                   Casting interaction, three casting algorithms, scenarios, history, tree-hole, long-term memory
 hexagrams.js             64 hexagrams, judgments, keywords, line texts, trigram mapping
-grad-context.js          Graduate-scenario knowledge base (injected into the AI prompt)
-server.js                Node static server + /api/interpret proxy
+grad-context.js          Graduate/faculty scenario knowledge base (for divination prompts)
+counsel-context.js       Counseling prompts + long-term memory mechanism
+server.js                Node static server + three API endpoints
 validate-hexagrams.cjs   Hexagram data integrity check
 铜钱.m4a                 Coin sound effect (required at runtime; keep in root)
 .env.example             Environment variable template
 ```
 
-## ⚙️ Model Configuration
+## ⚙️ Configuration
 
-Multiple OpenAI-compatible endpoints with automatic failover by index (`_1` → `_2` → … up to `_20`):
+Multiple OpenAI-compatible endpoints with automatic failover by index:
 
 ```env
 OPENAI_API_KEY_1=your_key
@@ -82,29 +108,27 @@ OPENAI_BASE_URL_1=https://api.openai.com/v1
 OPENAI_MODEL_1=gpt-4.1-mini
 ```
 
-Unnumbered configuration (`OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`) is also supported. Changes to keys or models take effect on the next request — no restart needed.
+Unnumbered configuration (`OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`) is also supported. Key/model changes take effect on the next request — no restart needed.
 
-## 🔒 Security
-
-When deploying publicly, keep keys only in the server-side `.env` — never in any front-end file. The backend includes rate limiting, request-body and question-length limits, and prompt-injection protection:
+Security parameters:
 
 ```env
-AI_TIMEOUT_MS=30000
-MAX_REQUEST_BYTES=32768
-MAX_QUESTION_CHARS=300
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX=6
+AI_TIMEOUT_MS=30000          # per-request timeout
+MAX_REQUEST_BYTES=32768      # request-body size cap
+MAX_QUESTION_CHARS=300       # divination question length cap
+RATE_LIMIT_WINDOW_MS=60000   # rate-limit window
+RATE_LIMIT_MAX=6             # requests per window per endpoint
 ```
 
 ## 🌐 Public Deployment
 
 - **Your own server**: `node server.js`, fronted by Nginx / Caddy for HTTPS and reverse proxying
 - **Node platforms (Render / Railway / Fly.io …)**: upload the project, set the start command to `node server.js`, and fill in the model key in the platform's environment variables
-- Only these files are needed to deploy: `index.html`, `styles.css`, `app.js`, `hexagrams.js`, `grad-context.js`, `server.js`, `铜钱.m4a`
+- Files needed to deploy: `index.html`, `styles.css`, `app.js`, `hexagrams.js`, `grad-context.js`, `counsel-context.js`, `server.js`, `铜钱.m4a`
 
 ## 🧪 Data Validation
 
-After editing `hexagrams.js`, verify that all 64 hexagrams and the trigram mapping are intact:
+After editing `hexagrams.js`, verify all 64 hexagrams and the trigram mapping are intact:
 
 ```bash
 npm run validate
@@ -112,9 +136,10 @@ npm run validate
 
 ## ❓ FAQ
 
-- **AI interpretation fails**: make sure `.env` (or the platform env) has a valid `OPENAI_API_KEY_1` / `OPENAI_BASE_URL_1` / `OPENAI_MODEL_1`.
+- **AI interpretation/counseling fails**: make sure `.env` (or the platform env) has a valid `OPENAI_API_KEY_1` / `OPENAI_BASE_URL_1` / `OPENAI_MODEL_1`.
 - **No sound on public access**: make sure `铜钱.m4a` is in the project root and isn't ignored by the platform.
 - **Port conflict**: set `PORT=3001` in `.env` and restart.
+- **Memory/history gone on another device**: all data lives in the local browser's localStorage and is not synced across devices.
 
 ## 📄 License
 

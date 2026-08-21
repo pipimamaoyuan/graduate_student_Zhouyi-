@@ -7,7 +7,30 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <nav class="top-nav" id="top-nav" aria-label="功能模块">
+      <button class="nav-btn active" data-module="landing" type="button" aria-pressed="true">首页</button>
+      <button class="nav-btn" data-module="divination" type="button" aria-pressed="false">周易算卦</button>
+      <button class="nav-btn" data-module="treehole" type="button" aria-pressed="false">心理树洞</button>
+    </nav>
+
+    <main class="landing-shell" id="landing-module">
+      <div class="landing-brand">
+        <h1>高校易占 · 心理树洞</h1>
+        <p>面向硕士/博士研究生与青年高校教师的两个工具。</p>
+      </div>
+      <div class="landing-cards">
+        <button class="landing-card" data-module="divination" type="button">
+          <h2>周易算卦</h2>
+          <p>铜钱、时间、数字三种起卦，看本卦 · 互卦 · 之卦，结合科研、导师、择业、考核等处境，给出温和、审慎的参考。</p>
+        </button>
+        <button class="landing-card" data-module="treehole" type="button">
+          <h2>心理树洞</h2>
+          <p>倾诉你的情绪，或与 AI 心理疏导助手聊聊。AI 会记住你的长期处境，避免你反复重提困境。</p>
+        </button>
+      </div>
+    </main>
+
+    <main class="app-shell" id="divination-module">
       <section class="workspace">
         <aside class="panel controls" aria-label="起卦操作">
           <div class="brand">
@@ -152,6 +175,70 @@
               </div>
               <p id="ai-output">完成六次起卦后，可请求 AI 生成个性化解读。</p>
             </article>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <main class="treehole-shell" id="treehole-module" hidden>
+      <section class="treehole-workspace">
+        <aside class="panel treehole-side">
+          <div class="treehole-brand">
+            <h2>心理树洞</h2>
+            <p>倾诉你的情绪，或与 AI 聊聊你的处境。</p>
+          </div>
+
+          <div id="treehole-mode" class="cast-mode" role="radiogroup" aria-label="树洞模式">
+            <button class="cast-mode-btn active" data-mode="vent" type="button" role="radio" aria-checked="true">倾诉模式</button>
+            <button class="cast-mode-btn" data-mode="chat" type="button" role="radio" aria-checked="false">咨询模式</button>
+          </div>
+
+          <div class="field">
+            <span>你的身份（可选）</span>
+            <div id="treehole-audience-tags" class="scenario-tags" role="group" aria-label="选择你的身份"></div>
+          </div>
+
+          <label class="treehole-memory-toggle" id="memory-toggle-row">
+            <input type="checkbox" id="memory-update-check" />
+            <span>同时让 AI 更新我的记忆（会发送给 AI）</span>
+          </label>
+
+          <div class="memory-head">
+            <h3>我的 AI 记忆</h3>
+            <button id="memory-toggle" class="secondary-action compact-action" type="button">查看</button>
+          </div>
+          <p class="memory-hint">AI 用它记住你的长期处境，避免你反复重提。画像只存在本机浏览器，可随时查看、编辑或清空。</p>
+          <textarea id="memory-content" class="memory-content" hidden readonly></textarea>
+          <div class="memory-actions" id="memory-actions" hidden>
+            <button id="memory-edit" class="secondary-action" type="button">编辑</button>
+            <button id="memory-save" class="secondary-action" type="button" hidden>保存</button>
+            <button id="memory-clear" class="secondary-action" type="button">清空</button>
+          </div>
+
+          <p class="treehole-privacy">咨询模式下，你写的内容会发送给 AI 用于疏导与更新记忆；倾诉内容只存在本机浏览器。</p>
+
+          <div id="crisis-notice" class="crisis-notice" hidden>
+            如果你正处于非常痛苦、甚至有伤害自己的想法，请一定先联系身边信任的人，或拨打全国心理援助热线 12356。如有紧急危险，请立即拨打 120 / 110。你值得被认真对待。
+          </div>
+
+          <p class="treehole-safety">AI 疏导不能替代专业心理治疗；如有需要请寻求学校心理咨询中心或专业机构的帮助。</p>
+        </aside>
+
+        <section class="treehole-main">
+          <div class="treehole-content-head">
+            <span id="treehole-content-title">倾诉记录</span>
+            <button id="clear-treehole" class="secondary-action compact-action" type="button">清空记录</button>
+          </div>
+          <div class="treehole-scroll">
+            <div id="vent-list" class="vent-list"></div>
+            <div id="chat-thread" class="chat-thread" hidden></div>
+          </div>
+          <div class="treehole-inputbar">
+            <label class="field">
+              <span id="treehole-prompt">写下此刻的心情…</span>
+              <textarea id="treehole-input" rows="3" placeholder="无论好坏，都可以写在这里。"></textarea>
+            </label>
+            <button id="treehole-submit" class="primary-action" type="button">投进树洞</button>
           </div>
         </section>
       </section>
