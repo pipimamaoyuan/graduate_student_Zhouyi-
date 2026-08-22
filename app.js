@@ -775,7 +775,16 @@ function setModule(module) {
   $("#divination-module").hidden = module !== "divination";
   $("#treehole-module").hidden = module !== "treehole";
   $("#voice-module").hidden = module !== "voice";
-  if (module === "voice") connectVoice();
+  if (module === "treehole") {
+    renderVentList();
+    renderChatThread();
+    renderMemory();
+  }
+  if (module === "voice") {
+    connectVoice();
+    renderVoiceHistory();
+    renderVoiceMemory();
+  }
 }
 
 function loadTreeholeEntries() {
@@ -1031,8 +1040,9 @@ async function submitTreehole() {
 
 // ---- 倾听树洞（实时语音 + 文字回退，长期记忆与心理树洞共用）----
 let voiceSocket = null;
-let voiceRecorder = null;
 let voiceStream = null;
+let voiceAudioContext = null;
+let voiceProcessorNode = null;
 let voiceRecording = false;
 
 function renderVoiceAudienceTags() {
@@ -1060,7 +1070,10 @@ function connectVoice() {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
   voiceSocket = new WebSocket(`${proto}//${location.host}/api/voice`);
 
-  voiceSocket.onopen = () => updateVoiceStatus("已连接，等待服务状态…", false);
+  voiceSocket.onopen = () => {
+    updateVoiceStatus("已连接，等待服务状态…", false);
+    voiceSocket.send(JSON.stringify({ type: "config", memory: loadMemory(), audience: getVoiceAudience() }));
+  };
 
   voiceSocket.onmessage = (event) => {
     if (typeof event.data === "string") {
@@ -1071,9 +1084,15 @@ function connectVoice() {
       } else if (msg.type === "reply") {
         removeVoiceThinking();
         appendVoiceMessage("ai", msg.text);
-        if (msg.memory) saveMemory(msg.memory);
+        persistVoiceMessage("ai", msg.text);
+        if (msg.memory) {
+          saveMemory(msg.memory);
+          renderVoiceMemory();
+        }
       } else if (msg.type === "transcript") {
         appendVoiceMessage("user", msg.text);
+        persistVoiceMessage("user", msg.text);
+        appendVoiceThinking();
       } else if (msg.type === "error") {
         removeVoiceThinking();
         appendVoiceMessage("ai", msg.text);
@@ -1141,16 +1160,23 @@ async function startVoiceRecording() {
   if (!voiceSocket || voiceSocket.readyState !== WebSocket.OPEN) return;
   try {
     voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    voiceRecorder = new MediaRecorder(voiceStream);
-    voiceRecorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0 && voiceSocket && voiceSocket.readyState === WebSocket.OPEN) {
+    voiceAudioContext = new AudioContext();
+    if (voiceAudioContext.state === "suspended") await voiceAudioContext.resume();
+    await voiceAudioContext.audioWorklet.addModule("audio-processor.js");
+    const source = voiceAudioContext.createMediaStreamSource(voiceStream);
+    voiceProcessorNode = new AudioWorkletNode(voiceAudioContext, "pcm16-processor");
+    voiceProcessorNode.port.onmessage = (event) => {
+      console.log("[voice] 发送 PCM 帧:", event.data.byteLength, "字节");
+      if (voiceSocket && voiceSocket.readyState === WebSocket.OPEN) {
         voiceSocket.send(event.data);
       }
     };
-    voiceRecorder.start(250);
+    source.connect(voiceProcessorNode);
+    voiceProcessorNode.connect(voiceAudioContext.destination);
     voiceRecording = true;
     $("#voice-record").classList.add("recording");
     $("#voice-record").textContent = "松开结束";
+    console.log("[voice] 开始录音");
   } catch (error) {
     updateVoiceStatus("无法访问麦克风，请检查浏览器权限。", false);
   }
@@ -1159,8 +1185,16 @@ async function startVoiceRecording() {
 function stopVoiceRecording() {
   if (!voiceRecording) return;
   voiceRecording = false;
-  if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
   if (voiceStream) voiceStream.getTracks().forEach((track) => track.stop());
+  if (voiceAudioContext) {
+    voiceAudioContext.close().catch(() => {});
+  }
+  voiceStream = null;
+  voiceAudioContext = null;
+  voiceProcessorNode = null;
+  if (voiceSocket && voiceSocket.readyState === WebSocket.OPEN) {
+    voiceSocket.send(JSON.stringify({ type: "finish" }));
+  }
   $("#voice-record").classList.remove("recording");
   $("#voice-record").textContent = "按住说话";
 }
@@ -1175,6 +1209,80 @@ function playVoiceAudio(data) {
   } catch (error) {
     // 播放失败不影响文字展示
   }
+}
+
+// 倾听树洞的「我的 AI 记忆」与历史记录（与心理树洞共用同一份数据）
+function renderVoiceMemory() {
+  $("#voice-memory-content").value = loadMemory() || "（暂无记忆）";
+}
+
+function toggleVoiceMemory() {
+  const content = $("#voice-memory-content");
+  const actions = $("#voice-memory-actions");
+  const show = content.hidden;
+  content.hidden = !show;
+  actions.hidden = !show;
+  $("#voice-memory-toggle").textContent = show ? "收起" : "查看";
+  if (show) renderVoiceMemory();
+}
+
+function editVoiceMemory() {
+  const content = $("#voice-memory-content");
+  const willEdit = content.readOnly;
+  content.readOnly = !willEdit;
+  $("#voice-memory-save").hidden = !willEdit;
+  $("#voice-memory-edit").textContent = willEdit ? "取消" : "编辑";
+  if (willEdit) content.focus();
+  else content.value = loadMemory() || "（暂无记忆）";
+}
+
+function saveVoiceMemoryEdit() {
+  const content = $("#voice-memory-content");
+  saveMemory(content.value.trim());
+  content.readOnly = true;
+  $("#voice-memory-save").hidden = true;
+  $("#voice-memory-edit").textContent = "编辑";
+  renderVoiceMemory();
+}
+
+function clearVoiceMemory() {
+  if (!confirm("确定清空 AI 对你的长期记忆吗？")) return;
+  saveMemory("");
+  renderVoiceMemory();
+}
+
+function persistVoiceMessage(role, text) {
+  const chat = loadTreeholeChat();
+  chat.push({ id: Date.now(), time: Date.now(), role, text });
+  if (chat.length > 200) chat.splice(0, chat.length - 200);
+  saveTreeholeChat(chat);
+}
+
+function renderVoiceHistory() {
+  const chat = loadTreeholeChat();
+  const thread = $("#voice-transcript");
+  thread.innerHTML = "";
+  if (!chat.length) {
+    thread.innerHTML = `<div class="treehole-empty">在这里用语音和 AI 聊聊。它会结合你的长期记忆，帮你理清处境。</div>`;
+    return;
+  }
+  chat.forEach((m) => {
+    const div = document.createElement("div");
+    div.className = `chat-msg ${m.role === "user" ? "user" : "ai"}`;
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble";
+    bubble.textContent = m.text;
+    div.appendChild(bubble);
+    thread.appendChild(div);
+  });
+  const scroll = thread.closest(".treehole-scroll");
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function clearVoiceRecords() {
+  if (!confirm("确定清空对话记录吗？")) return;
+  saveTreeholeChat([]);
+  renderVoiceHistory();
 }
 
 function bindEvents() {
@@ -1267,6 +1375,11 @@ function bindEvents() {
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
   });
+  $("#clear-voice").addEventListener("click", clearVoiceRecords);
+  $("#voice-memory-toggle").addEventListener("click", toggleVoiceMemory);
+  $("#voice-memory-edit").addEventListener("click", editVoiceMemory);
+  $("#voice-memory-save").addEventListener("click", saveVoiceMemoryEdit);
+  $("#voice-memory-clear").addEventListener("click", clearVoiceMemory);
   $("#treehole-audience-tags").addEventListener("click", (event) => {
     const tag = event.target.closest(".scenario-tag");
     if (!tag) return;
@@ -1294,6 +1407,8 @@ refreshHistoryCount();
 setModule("landing");
 setTreeholeMode("vent");
 renderMemory();
+renderVoiceHistory();
+renderVoiceMemory();
 
 
 

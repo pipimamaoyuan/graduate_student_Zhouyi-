@@ -264,7 +264,19 @@
             <div id="voice-audience-tags" class="scenario-tags" role="group" aria-label="选择你的身份"></div>
           </div>
 
-          <p class="treehole-privacy">语音/文字内容会发送给 AI 用于疏导与更新记忆；长期记忆与「心理树洞」共用，可在心理树洞查看、编辑。</p>
+          <div class="memory-head">
+            <h3>我的 AI 记忆</h3>
+            <button id="voice-memory-toggle" class="secondary-action compact-action" type="button">查看</button>
+          </div>
+          <p class="memory-hint">与「心理树洞」共用同一份记忆，可随时查看、编辑或清空。</p>
+          <textarea id="voice-memory-content" class="memory-content" hidden readonly></textarea>
+          <div class="memory-actions" id="voice-memory-actions" hidden>
+            <button id="voice-memory-edit" class="secondary-action" type="button">编辑</button>
+            <button id="voice-memory-save" class="secondary-action" type="button" hidden>保存</button>
+            <button id="voice-memory-clear" class="secondary-action" type="button">清空</button>
+          </div>
+
+          <p class="treehole-privacy">语音/文字内容会发送给 AI 用于疏导与更新记忆；长期记忆与「心理树洞」共用。</p>
 
           <div id="voice-crisis-notice" class="crisis-notice" hidden>
             如果你正处于非常痛苦、甚至有伤害自己的想法，请一定先联系身边信任的人，或拨打全国心理援助热线 12356。如有紧急危险，请立即拨打 120 / 110。你值得被认真对待。
@@ -274,6 +286,10 @@
         </aside>
 
         <section class="treehole-main">
+          <div class="treehole-content-head">
+            <span>对话记录</span>
+            <button id="clear-voice" class="secondary-action compact-action" type="button">清空记录</button>
+          </div>
           <div class="treehole-scroll">
             <div id="voice-transcript" class="chat-thread"></div>
           </div>

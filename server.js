@@ -4,7 +4,17 @@ const path = require("path");
 const { GRAD_SYSTEM_PROMPT, AUDIENCES, AUDIENCE_KEYS, SCENARIOS, buildScenarioPrompt } = require("./grad-context");
 const { buildCounselMessages, buildRememberMessages, parseCounselOutput, MAX_MEMORY_CHARS } = require("./counsel-context");
 const { WebSocketServer } = require("ws");
-const { voiceConfigured, transcribeAudio, synthesizeSpeech } = require("./voice-context");
+const { voiceConfigured, synthesizeSpeech, createAsrSession } = require("./voice-context");
+
+// 把 .env 里的配置加载进 process.env（dotenv 风格），
+// 使 voice-context.js 等模块能通过 process.env.DASHSCOPE_API_KEY 读取语音 Key。
+// 已存在的真实环境变量不会被覆盖。
+(function loadDotEnv() {
+  const envFile = parseEnvFile(path.join(__dirname, ".env"));
+  for (const key of Object.keys(envFile)) {
+    if (!(key in process.env)) process.env[key] = envFile[key];
+  }
+})();
 
 function parseEnvFile(filePath) {
   const values = {};
@@ -476,12 +486,39 @@ server.listen(PORT, () => {
   console.log(`Configured LLM providers: ${config.providers.length}`);
   console.log(config.providers.length ? "LLM provider chain is configured." : "LLM provider chain is not configured yet.");
   console.log("Changes to .env providers will be reloaded on each AI request.");
+  console.log("语音服务（DASHSCOPE）已配置:", voiceConfigured());
 });
 
 // 倾听树洞：实时语音/文字对话的 WebSocket 端点。
 const wss = new WebSocketServer({ server, path: "/api/voice" });
 
+async function voiceReply(ws, text, memory, audience) {
+  try {
+    const payload = validateCounselPayload({
+      message: text,
+      memory: memory || "",
+      audience: audience || ""
+    });
+    const result = await callCounsel(payload);
+    ws.send(JSON.stringify({ type: "reply", text: result.reply, memory: result.memory }));
+
+    try {
+      const audio = await synthesizeSpeech(result.reply);
+      if (audio) ws.send(audio, { binary: true });
+    } catch (error) {
+      console.log("[TTS] 合成失败:", error.message);
+    }
+    return result.memory;
+  } catch (error) {
+    ws.send(JSON.stringify({ type: "error", text: error.message || "心理疏导暂时不可用" }));
+    return null;
+  }
+}
+
 wss.on("connection", (ws) => {
+  let memory = "";
+  let audience = "";
+
   ws.send(JSON.stringify({
     type: "status",
     voiceReady: voiceConfigured(),
@@ -490,15 +527,33 @@ wss.on("connection", (ws) => {
       : "语音服务未配置（缺少 DASHSCOPE_API_KEY），当前为文字模式。"
   }));
 
-  ws.on("message", async (data, isBinary) => {
+  let asrSession = null;
+
+  function ensureAsrSession() {
+    if (asrSession || !voiceConfigured()) return asrSession;
+    asrSession = createAsrSession(
+      async (text) => {
+        ws.send(JSON.stringify({ type: "transcript", text }));
+        const updated = await voiceReply(ws, text, memory, audience);
+        if (updated) memory = updated;
+      },
+      (error) => ws.send(JSON.stringify({ type: "error", text: "语音识别出错：" + error.message }))
+    );
+    return asrSession;
+  }
+
+  function finishAsrSession() {
+    if (asrSession) {
+      asrSession.finish();
+      asrSession = null;
+    }
+  }
+
+  ws.on("message", (data, isBinary) => {
     if (isBinary) {
-      // 音频块 → 实时语音识别（占位，接入通义千问后生效）
-      try {
-        const text = await transcribeAudio(Buffer.from(data));
-        if (text) ws.send(JSON.stringify({ type: "transcript", text }));
-      } catch (error) {
-        // 忽略单块识别错误
-      }
+      console.log("[voice] 收到音频帧:", Buffer.from(data).length, "字节");
+      const session = ensureAsrSession();
+      if (session) session.sendAudio(Buffer.from(data));
       return;
     }
 
@@ -509,22 +564,28 @@ wss.on("connection", (ws) => {
       return;
     }
 
-    if (msg.type === "message" && msg.text) {
-      try {
-        const payload = validateCounselPayload({
-          message: msg.text,
-          memory: msg.memory || "",
-          audience: msg.audience || ""
-        });
-        const result = await callCounsel(payload);
-        ws.send(JSON.stringify({ type: "reply", text: result.reply, memory: result.memory }));
-
-        const audio = await synthesizeSpeech(result.reply);
-        if (audio) ws.send(audio, { binary: true });
-      } catch (error) {
-        ws.send(JSON.stringify({ type: "error", text: error.message || "心理疏导暂时不可用" }));
-      }
+    if (msg.type === "config") {
+      memory = msg.memory || "";
+      audience = msg.audience || "";
+      return;
     }
+
+    if (msg.type === "finish") {
+      finishAsrSession();
+      return;
+    }
+
+    if (msg.type === "message" && msg.text) {
+      memory = msg.memory || memory;
+      audience = msg.audience || audience;
+      voiceReply(ws, msg.text, memory, audience).then((updated) => {
+        if (updated) memory = updated;
+      });
+    }
+  });
+
+  ws.on("close", () => {
+    if (asrSession) asrSession.close();
   });
 
   ws.on("error", () => {});
