@@ -13,6 +13,7 @@
 
 let currentModule = "divination";
 let treeholeMode = "vent";
+let cognitionTopic = "";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -775,6 +776,7 @@ function setModule(module) {
   $("#divination-module").hidden = module !== "divination";
   $("#treehole-module").hidden = module !== "treehole";
   $("#voice-module").hidden = module !== "voice";
+  $("#cognition-module").hidden = module !== "cognition";
   if (module === "treehole") {
     renderVentList();
     renderChatThread();
@@ -784,6 +786,10 @@ function setModule(module) {
     connectVoice();
     renderVoiceHistory();
     renderVoiceMemory();
+  }
+  if (module === "cognition") {
+    renderCognitionThread();
+    renderCognitionMemory();
   }
 }
 
@@ -1285,6 +1291,206 @@ function clearVoiceRecords() {
   renderVoiceHistory();
 }
 
+// ---- 看懂情绪（第四个子模块，与心理树洞/倾听树洞共用历史与记忆）----
+function renderCognitionAudienceTags() {
+  const container = $("#cognition-audience-tags");
+  container.innerHTML = "";
+  AUDIENCE_OPTIONS.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "scenario-tag";
+    button.dataset.value = item.value;
+    button.textContent = item.label;
+    button.setAttribute("aria-pressed", item.value === "" ? "true" : "false");
+    if (item.value === "") button.classList.add("active");
+    container.appendChild(button);
+  });
+}
+
+function getCognitionAudience() {
+  const active = $("#cognition-audience-tags .scenario-tag.active");
+  return active ? active.dataset.value : "";
+}
+
+function renderCognitionTopics() {
+  const container = $("#cognition-topics");
+  const topics = (typeof COGNITION_CONTEXT !== "undefined" && COGNITION_CONTEXT.TOPICS) || [];
+  container.innerHTML = "";
+  topics.forEach((topic) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cognition-topic";
+    button.dataset.key = topic.key;
+    button.textContent = topic.title;
+    button.setAttribute("aria-pressed", "false");
+    container.appendChild(button);
+  });
+}
+
+function selectCognitionTopic(key) {
+  const topics = (typeof COGNITION_CONTEXT !== "undefined" && COGNITION_CONTEXT.TOPICS) || [];
+  const topic = topics.find((t) => t.key === key);
+  if (!topic) return;
+
+  if (cognitionTopic === key) {
+    cognitionTopic = "";
+    $$("#cognition-topics .cognition-topic").forEach((chip) => {
+      chip.classList.remove("active");
+      chip.setAttribute("aria-pressed", "false");
+    });
+    return;
+  }
+
+  cognitionTopic = key;
+  $$("#cognition-topics .cognition-topic").forEach((chip) => {
+    const active = chip.dataset.key === key;
+    chip.classList.toggle("active", active);
+    chip.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  const input = $("#cognition-input");
+  input.value = `我最近遇到了「${topic.title}」的情况，心里有些乱，能帮我科学、理性地认识一下吗？`;
+  input.focus();
+}
+
+function toggleCognitionTopics() {
+  const topics = $("#cognition-topics");
+  const show = topics.hidden;
+  topics.hidden = !show;
+  $("#cognition-topics-toggle").textContent = show ? "收起" : "展开";
+}
+
+function renderCognitionThread() {
+  const chat = loadTreeholeChat();
+  const thread = $("#cognition-thread");
+  thread.innerHTML = "";
+  if (!chat.length) {
+    thread.innerHTML = `<div class="treehole-empty">从一个常见困扰开始，或写下你的处境。AI 会帮你科学、理性地认识它，并结合你的长期记忆。</div>`;
+    return;
+  }
+  chat.forEach((m) => {
+    const div = document.createElement("div");
+    div.className = `chat-msg ${m.role === "user" ? "user" : "ai"}`;
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble";
+    bubble.textContent = m.text;
+    div.appendChild(bubble);
+    thread.appendChild(div);
+  });
+  const scroll = thread.closest(".treehole-scroll");
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function appendCognitionThinking() {
+  removeCognitionThinking();
+  const div = document.createElement("div");
+  div.className = "chat-msg ai thinking";
+  div.id = "cognition-thinking";
+  div.innerHTML = `<div class="chat-bubble">AI 正在思考…</div>`;
+  $("#cognition-thread").appendChild(div);
+  const scroll = $("#cognition-thread").closest(".treehole-scroll");
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function removeCognitionThinking() {
+  const thinking = $("#cognition-thinking");
+  if (thinking) thinking.remove();
+}
+
+function persistCognitionMessage(role, text) {
+  const chat = loadTreeholeChat();
+  chat.push({ id: Date.now(), time: Date.now(), role, text });
+  if (chat.length > 200) chat.splice(0, chat.length - 200);
+  saveTreeholeChat(chat);
+}
+
+function renderCognitionMemory() {
+  $("#cognition-memory-content").value = loadMemory() || "（暂无记忆）";
+}
+
+function toggleCognitionMemory() {
+  const content = $("#cognition-memory-content");
+  const actions = $("#cognition-memory-actions");
+  const show = content.hidden;
+  content.hidden = !show;
+  actions.hidden = !show;
+  $("#cognition-memory-toggle").textContent = show ? "收起" : "查看";
+  if (show) renderCognitionMemory();
+}
+
+function editCognitionMemory() {
+  const content = $("#cognition-memory-content");
+  const willEdit = content.readOnly;
+  content.readOnly = !willEdit;
+  $("#cognition-memory-save").hidden = !willEdit;
+  $("#cognition-memory-edit").textContent = willEdit ? "取消" : "编辑";
+  if (willEdit) content.focus();
+  else content.value = loadMemory() || "（暂无记忆）";
+}
+
+function saveCognitionMemoryEdit() {
+  const content = $("#cognition-memory-content");
+  saveMemory(content.value.trim());
+  content.readOnly = true;
+  $("#cognition-memory-save").hidden = true;
+  $("#cognition-memory-edit").textContent = "编辑";
+  renderCognitionMemory();
+}
+
+function clearCognitionMemory() {
+  if (!confirm("确定清空 AI 对你的长期记忆吗？")) return;
+  saveMemory("");
+  renderCognitionMemory();
+}
+
+function clearCognitionRecords() {
+  if (!confirm("确定清空对话记录吗？")) return;
+  saveTreeholeChat([]);
+  renderCognitionThread();
+}
+
+function showCognitionCrisisNotice() {
+  const notice = $("#cognition-crisis-notice");
+  notice.hidden = false;
+  notice.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function submitCognition() {
+  const input = $("#cognition-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const audience = getCognitionAudience();
+
+  if (hasCrisisContent(text)) showCognitionCrisisNotice();
+
+  $("#cognition-submit").disabled = true;
+  $("#cognition-submit").textContent = "发送中…";
+  input.value = "";
+  persistCognitionMessage("user", text);
+  renderCognitionThread();
+  appendCognitionThinking();
+  try {
+    const res = await fetch("/api/cognize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, topic: cognitionTopic, memory: loadMemory(), audience })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "看懂情绪暂时不可用");
+    persistCognitionMessage("ai", data.reply || "");
+    if (data.memory) {
+      saveMemory(data.memory);
+      renderCognitionMemory();
+    }
+  } catch (error) {
+    persistCognitionMessage("ai", `暂时无法回复：${error.message}`);
+  } finally {
+    removeCognitionThinking();
+    renderCognitionThread();
+    $("#cognition-submit").disabled = false;
+    $("#cognition-submit").textContent = "发送";
+  }
+}
+
 function bindEvents() {
   $("#coin-toss").addEventListener("click", handlePrimaryAction);
   $("#reset-cast").addEventListener("click", resetCast);
@@ -1389,6 +1595,27 @@ function bindEvents() {
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
   });
+  $("#cognition-topics").addEventListener("click", (event) => {
+    const chip = event.target.closest(".cognition-topic");
+    if (!chip) return;
+    selectCognitionTopic(chip.dataset.key);
+  });
+  $("#cognition-topics-toggle").addEventListener("click", toggleCognitionTopics);
+  $("#cognition-submit").addEventListener("click", submitCognition);
+  $("#clear-cognition").addEventListener("click", clearCognitionRecords);
+  $("#cognition-memory-toggle").addEventListener("click", toggleCognitionMemory);
+  $("#cognition-memory-edit").addEventListener("click", editCognitionMemory);
+  $("#cognition-memory-save").addEventListener("click", saveCognitionMemoryEdit);
+  $("#cognition-memory-clear").addEventListener("click", clearCognitionMemory);
+  $("#cognition-audience-tags").addEventListener("click", (event) => {
+    const tag = event.target.closest(".scenario-tag");
+    if (!tag) return;
+    $$("#cognition-audience-tags .scenario-tag").forEach((btn) => {
+      const active = btn.dataset.value === tag.dataset.value;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !$("#history-modal").hidden) {
       $("#history-modal").hidden = true;
@@ -1400,6 +1627,8 @@ renderAudienceTags();
 renderScenarioTags();
 renderTreeholeAudienceTags();
 renderVoiceAudienceTags();
+renderCognitionAudienceTags();
+renderCognitionTopics();
 bindEvents();
 setCastMode("coin");
 resetCast();
@@ -1409,6 +1638,8 @@ setTreeholeMode("vent");
 renderMemory();
 renderVoiceHistory();
 renderVoiceMemory();
+renderCognitionThread();
+renderCognitionMemory();
 
 
 

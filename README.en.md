@@ -1,16 +1,16 @@
-# Academic Yijing · Mind Treehole
+# Where the Heart Finds Rest
 
 [中文](README.md) · [English](README.en.md) · [日本語](README.ja.md)
 
 Welcome!
 
-Three tools for **graduate students (master's & doctoral)** and **young university faculty**: *Zhouyi* (I Ching) divination as a life reference, AI emotional support through a psychological tree-hole, and real-time voice venting through a voice tree-hole.
+Four tools for **graduate students (master's & doctoral)** and **young university faculty**: *Zhouyi* (I Ching) divination as a life reference, AI emotional support through a psychological tree-hole, real-time voice venting through a voice tree-hole, and a tool to understand your emotions rationally — without fear, avoidance, or overreaction.
 
 > For traditional-culture study and emotional support only. This is not professional advice (medical, psychological, legal, or career). Please interpret results rationally.
 
 ## ✨ What's inside
 
-The project has three sub-features; the **landing page** lets you pick one:
+The project has four sub-features; the **landing page** lets you pick one:
 
 ### 1. Zhouyi Divination
 
@@ -38,6 +38,15 @@ Talk to the AI emotional-support assistant by **voice**, like a phone call.
 - **Real-time voice conversation**: browser recording → Alibaba Qwen ASR → AI counseling → Qwen TTS → playback (falls back to text mode when the voice API isn't configured)
 - **Shared long-term memory**: the conversation text feeds the same user profile as the tree-hole
 - Same counseling functionality as "Mind Treehole", but via voice
+
+### 4. Understand Your Emotions
+
+Understand emotions, mental states, and bodily reactions in a **scientific, rational** way — face them without fear, avoidance, or overreaction.
+
+- **Quick-ask from common struggles**: 24 high-frequency struggles for graduate students & young faculty (group-meeting reports, failed experiments, rejections, advisor conflicts, delayed graduation, "up-or-out" review, imposter syndrome, somatic anxiety, etc.) — click one to fill the chat box, then add your specifics
+- **Understand emotions scientifically**: each topic bundles "two common irrational beliefs" plus "a more scientific, rational view", injected as the AI's prompt/skill to help spot black-and-white thinking, catastrophizing, and over-self-blame
+- **Interoperable with the tree-holes**: chat history and long-term memory are fully shared and managed together with "Mind Treehole" and "Voice Treehole"
+- **Safety rails**: same as the tree-hole (crisis referral, no diagnosis, no encouraging confrontation)
 
 ## 🚀 Quick Start
 
@@ -69,7 +78,7 @@ Open <http://localhost:3000> in a browser.
 ### Backend
 
 - Pure **Node.js built-in `http` module** — no Express or other frameworks
-- Serves static files plus three API endpoints: `/api/interpret` (divination AI), `/api/counsel` (counseling), `/api/remember` (memory update)
+- Serves static files plus four API endpoints: `/api/interpret` (divination AI), `/api/counsel` (counseling), `/api/cognize` (understand emotions), `/api/remember` (memory update)
 - Model keys stay only in the server's `.env`, never exposed to the frontend
 
 ### AI
@@ -100,6 +109,7 @@ app.js                   Casting interaction, three casting algorithms, scenario
 hexagrams.js             64 hexagrams, judgments, keywords, line texts, trigram mapping
 grad-context.js          Graduate/faculty scenario knowledge base (for divination prompts)
 counsel-context.js       Counseling prompts + long-term memory mechanism
+cognition-context.js     Emotion-understanding knowledge base (24 common-struggle prompts/skills)
 voice-context.js         Voice capability for the voice tree-hole (Qwen ASR/TTS)
 audio-processor.js       Browser-side microphone PCM capture (AudioWorklet)
 server.js                Node static server + three API endpoints
@@ -160,7 +170,7 @@ RATE_LIMIT_MAX=6             # requests per window per endpoint
 
 - **Your own server**: `node server.js`, fronted by Nginx / Caddy for HTTPS and reverse proxying
 - **Node platforms (Render / Railway / Fly.io …)**: upload the project, set the start command to `node server.js`, and fill in the model key in the platform's environment variables
-- Files needed to deploy: `index.html`, `styles.css`, `app.js`, `hexagrams.js`, `grad-context.js`, `counsel-context.js`, `server.js`, `铜钱.m4a`
+- Files needed to deploy: `index.html`, `styles.css`, `app.js`, `hexagrams.js`, `grad-context.js`, `counsel-context.js`, `cognition-context.js`, `server.js`, `铜钱.m4a`
 
 ## 🧪 Data Validation
 

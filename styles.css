@@ -1640,6 +1640,70 @@ input[type="number"]:focus {
   color: #fffaf2;
 }
 
+.cognition-topics-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cognition-topics-head span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cognition-topics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+  max-height: 230px;
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 252, 245, 0.5);
+  overflow-y: auto;
+}
+
+.cognition-topics[hidden] {
+  display: none;
+}
+
+.cognition-topic {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.cognition-topic:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.cognition-topic.active {
+  border-color: var(--green);
+  background: rgba(47, 102, 81, 0.16);
+  color: var(--green);
+  font-weight: 600;
+}
+
+.cognition-topic.active::before {
+  content: "✓ ";
+  font-weight: 700;
+}
+
 .site-disclaimer {
   max-width: 960px;
   margin: 0 auto;

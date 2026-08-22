@@ -2,7 +2,8 @@
 const fs = require("fs");
 const path = require("path");
 const { GRAD_SYSTEM_PROMPT, AUDIENCES, AUDIENCE_KEYS, SCENARIOS, buildScenarioPrompt } = require("./grad-context");
-const { buildCounselMessages, buildRememberMessages, parseCounselOutput, MAX_MEMORY_CHARS } = require("./counsel-context");
+const { buildCounselMessages, buildRememberMessages, parseCounselOutput, MAX_MEMORY_CHARS, MEMORY_DELIMITER, UNTRUSTED_DATA_NOTE, MEMORY_TEMPLATE } = require("./counsel-context");
+const { COGNITION_SYSTEM_PROMPT, TOPIC_KEYS, TOPIC_MAP } = require("./cognition-context");
 const { WebSocketServer } = require("ws");
 const { voiceConfigured, synthesizeSpeech, createAsrSession } = require("./voice-context");
 
@@ -407,6 +408,64 @@ async function updateMemory(payload) {
   return { memory: sanitizeChineseText(content).slice(0, MAX_MEMORY_CHARS), model, providerIndex };
 }
 
+// ---- 看懂情绪（第四个子模块）----
+// 与心理树洞共用同一份长期记忆机制，但系统提示词更强调「科学、理性地认识情绪」。
+function buildCognitionMessages(message, memory, audiencePersona, topic) {
+  const persona = audiencePersona
+    ? `\n\n关于用户的身份背景，可以参考：\n${audiencePersona}`
+    : "";
+
+  // 命中候选话题时，把该话题的核心观点作为 AI 的 skill/参考注入，确保回答忠于科学认知。
+  const topicRef = topic
+    ? `\n\n【参考认知资料】用户选择的话题是「${topic.title}」。下面是我们准备好的、关于这个话题的核心观点，请以此为核心参考来回答（用户可能补充了具体细节，请结合细节展开，但核心认知要忠于参考内容）：\n· 常见的不合理认知之一：${topic.misconceptions[0]}\n· 常见的不合理认知之二：${topic.misconceptions[1]}\n· 更科学、更理性的认知：${topic.correction}`
+    : "";
+
+  const system = COGNITION_SYSTEM_PROMPT + persona + topicRef;
+
+  const user = [
+    "【用户长期画像】（可能为空，空则说明是初次交流）",
+    memory || "（暂无）",
+    "",
+    "【用户当前的困扰】",
+    String(message || "").trim() || "（用户没有输入具体内容）",
+    "",
+    UNTRUSTED_DATA_NOTE,
+    "",
+    "请按以下格式回复：",
+    "1. 先输出一段直接对用户说的话（温暖、共情、科学理性、具体、可执行，纯文本）。",
+    "2. 然后另起一行，单独写上分隔符 " + MEMORY_DELIMITER + "。",
+    "3. 分隔符之后，输出更新后的【用户长期画像】，严格按下面的模板逐字段填写；只保留对长期有价值的信息，总体控制在 400 字以内；如果本次没有新的长期信息，就大致保持原画像不变：",
+    MEMORY_TEMPLATE
+  ].join("\n");
+
+  return [
+    { role: "system", content: system },
+    { role: "user", content: user }
+  ];
+}
+
+function validateCognitionPayload(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw makeHttpError("请求格式不正确。", 400);
+  }
+  const message = String(payload.message || "").trim();
+  if (!message) throw makeHttpError("请先写下你想说的话。", 400);
+  if (message.length > 2000) throw makeHttpError("内容太长，请精简后再发送。", 400);
+  const memory = String(payload.memory || "").slice(0, 2000);
+  const audience = AUDIENCE_KEYS.includes(payload.audience) ? payload.audience : "";
+  const topic = TOPIC_KEYS.includes(payload.topic) ? payload.topic : "";
+  return { message, memory, audience, topic };
+}
+
+async function callCognition(payload) {
+  const persona = getAudiencePersona(payload.audience);
+  const topic = TOPIC_MAP[payload.topic] || null;
+  const messages = buildCognitionMessages(payload.message, payload.memory, persona, topic);
+  const { content, model, providerIndex } = await callLLM(messages, 0.3);
+  const { reply, memory } = parseCounselOutput(content);
+  return { reply: sanitizeChineseText(reply), memory: sanitizeChineseText(memory), model, providerIndex };
+}
+
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   const pathname = decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname);
@@ -467,6 +526,19 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 200, result);
       } catch (error) {
         sendJson(res, error.status || 500, { error: error.message || "记忆更新失败" });
+      }
+      return;
+    }
+
+    if (req.url === "/api/cognize") {
+      try {
+        checkRateLimit(req);
+        const payload = await readJsonBody(req);
+        const result = await callCognition(validateCognitionPayload(payload));
+        const { showModel } = getConfig();
+        sendJson(res, 200, { ...result, showModel });
+      } catch (error) {
+        sendJson(res, error.status || 500, { error: error.message || "看懂情绪暂时不可用" });
       }
       return;
     }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>高校易占 · 周易起卦</title>
+    <title>此心安处</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -12,12 +12,13 @@
       <button class="nav-btn" data-module="divination" type="button" aria-pressed="false">周易算卦</button>
       <button class="nav-btn" data-module="treehole" type="button" aria-pressed="false">心理树洞</button>
       <button class="nav-btn" data-module="voice" type="button" aria-pressed="false">倾听树洞</button>
+      <button class="nav-btn" data-module="cognition" type="button" aria-pressed="false">看懂情绪</button>
     </nav>
 
     <main class="landing-shell" id="landing-module">
       <div class="landing-brand">
-        <h1>高校易占 · 心理树洞</h1>
-        <p>面向硕士/博士研究生与青年高校教师的两个工具。</p>
+        <h1>此心安处</h1>
+        <p>为硕士/博士研究生与青年高校教师，提供心理陪伴、情绪疏导与周易人生参考。</p>
       </div>
       <div class="landing-cards">
         <button class="landing-card" data-module="divination" type="button">
@@ -32,6 +33,10 @@
           <h2>倾听树洞</h2>
           <p>用语音和 AI 心理疏导助手对话，像打电话一样倾诉；对话同样会沉淀进你的长期记忆。</p>
         </button>
+        <button class="landing-card" data-module="cognition" type="button">
+          <h2>看懂情绪</h2>
+          <p>科学、理性地认识情绪与处境：从常见困扰里选一个，或写下你的处境，让 AI 帮你不惧怕、不逃避、不过度反应。</p>
+        </button>
       </div>
     </main>
 
@@ -42,7 +47,7 @@
             <div class="brand-left">
               <span class="seal">易</span>
               <div>
-                <h1>高校易占</h1>
+                <h1>周易算卦</h1>
                 <p>面向硕士/博士研究生与青年高校教师的周易参考。</p>
               </div>
             </div>
@@ -304,6 +309,65 @@
       </section>
     </main>
 
+    <main class="treehole-shell" id="cognition-module" hidden>
+      <section class="treehole-workspace">
+        <aside class="panel treehole-side">
+          <div class="treehole-brand">
+            <h2>看懂情绪</h2>
+            <p>科学、理性地认识情绪与处境，不惧怕、不逃避、不过度反应。</p>
+          </div>
+
+          <div class="field">
+            <span>你的身份（可选）</span>
+            <div id="cognition-audience-tags" class="scenario-tags" role="group" aria-label="选择你的身份"></div>
+          </div>
+
+          <div class="memory-head">
+            <h3>我的 AI 记忆</h3>
+            <button id="cognition-memory-toggle" class="secondary-action compact-action" type="button">查看</button>
+          </div>
+          <p class="memory-hint">与「心理树洞」「倾听树洞」共用同一份记忆，可随时查看、编辑或清空。</p>
+          <textarea id="cognition-memory-content" class="memory-content" hidden readonly></textarea>
+          <div class="memory-actions" id="cognition-memory-actions" hidden>
+            <button id="cognition-memory-edit" class="secondary-action" type="button">编辑</button>
+            <button id="cognition-memory-save" class="secondary-action" type="button" hidden>保存</button>
+            <button id="cognition-memory-clear" class="secondary-action" type="button">清空</button>
+          </div>
+
+          <p class="treehole-privacy">你写的内容会发送给 AI，用于帮你看懂情绪并更新记忆；长期记忆与「心理树洞」「倾听树洞」共用。</p>
+
+          <div id="cognition-crisis-notice" class="crisis-notice" hidden>
+            如果你正处于非常痛苦、甚至有伤害自己的想法，请一定先联系身边信任的人，或拨打全国心理援助热线 12356。如有紧急危险，请立即拨打 120 / 110。你值得被认真对待。
+          </div>
+
+          <p class="treehole-safety">AI 疏导不能替代专业心理治疗或医疗诊断；如有需要请寻求学校心理咨询中心或专业机构的帮助。</p>
+        </aside>
+
+        <section class="treehole-main">
+          <div class="cognition-topics-head">
+            <span>常见困扰（点击可快速提问）</span>
+            <button id="cognition-topics-toggle" class="secondary-action compact-action" type="button">收起</button>
+          </div>
+          <div id="cognition-topics" class="cognition-topics"></div>
+
+          <div class="treehole-content-head">
+            <span>对话记录</span>
+            <button id="clear-cognition" class="secondary-action compact-action" type="button">清空记录</button>
+          </div>
+          <div class="treehole-scroll">
+            <div id="cognition-thread" class="chat-thread"></div>
+          </div>
+          <div class="treehole-inputbar">
+            <label class="field">
+              <span id="cognition-prompt">选择一个常见困扰，或直接写下你的处境…</span>
+              <textarea id="cognition-input" rows="3" placeholder="例如：我最近组会汇报不顺，越来越怀疑自己不适合搞科研。"></textarea>
+            </label>
+            <button id="cognition-submit" class="primary-action" type="button">发送</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
     <footer class="site-disclaimer">
       本工具仅供传统文化学习与心理慰藉参考，不构成任何专业建议（包括医疗、心理、法律、职业决策等）。请理性看待结果，重要决定请咨询专业人士并尊重科学。
     </footer>
@@ -322,6 +386,7 @@
     </div>
 
     <script src="./hexagrams.js"></script>
+    <script src="./cognition-context.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

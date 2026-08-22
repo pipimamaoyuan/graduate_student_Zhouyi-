@@ -117,6 +117,8 @@ function parseCounselOutput(content) {
 module.exports = {
   COUNSEL_SYSTEM_PROMPT,
   MEMORY_TEMPLATE,
+  MEMORY_DELIMITER,
+  UNTRUSTED_DATA_NOTE,
   MAX_MEMORY_CHARS,
   buildCounselMessages,
   buildRememberMessages,
