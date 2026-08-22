@@ -100,7 +100,8 @@ app.js                   起卦操作、3 つの起卦アルゴリズム、シ�
 hexagrams.js             64 卦、卦辞、キーワード、六爻の爻辞、八卦マッピング
 grad-context.js          大学院生/若手教員のシナリオ知識ベース（起卦プロンプトに注入）
 counsel-context.js       心理サポートのプロンプト + 長期記憶の仕組み
-voice-context.js         音声ツリーホールの音声機能（通義千問 ASR/TTS のプレースホルダ）
+voice-context.js         音声ツリーホールの音声機能（通義千問 ASR/TTS）
+audio-processor.js       ブラウザ側のマイク PCM サンプリング（AudioWorklet）
 server.js                Node 静的サーバ + 3 つの API
 validate-hexagrams.cjs   卦データの整合性チェック
 铜钱.m4a                 銅銭の効果音（実行時に必要、ルートに置く）
@@ -119,13 +120,31 @@ OPENAI_MODEL_1=gpt-4.1-mini
 
 番号なしの設定（`OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`）にも対応。キーやモデルの変更は次回リクエストから反映され、再起動は不要です。
 
-「音声ツリーホール」の音声対話はアリババ通義千問（DashScope/百炼）を使用。予約済み：
+「音声ツリーホール」のリアルタイム音声対話には、アリババクラウド百炼（DashScope）の 2 つの音声機能が必要です：**音声認識（リアルタイム音声認識 ASR、音声→文字）** と **音声合成（TTS、文字→音声）**（間の「頭脳」は上記の OpenAI 互換モデルのままです）。
+
+**申請手順：**
+
+1. 百炼コンソールにログイン：<https://bailian.console.aliyun.com/>
+2. 「音声」を有効化し、**リアルタイム音声認識**（音声→文字）と**音声合成**（文字→音声）をそれぞれ有効化
+3. 「API-KEY 管理」で API Key を作成し、`DASHSCOPE_API_KEY` を取得
+4. 「業務空間（Workspace）」ユーザーは、コンソールで専用ドメイン（例 `xxxx.cn-beijing.maas.aliyuncs.com`）を確認できます
+
+**設定（`.env` に記述。`DASHSCOPE_API_KEY` は必須、他はデフォルトで可）：**
 
 ```env
-DASHSCOPE_API_KEY=your_qwen_voice_key
+DASHSCOPE_API_KEY=your_key
+
+# 音声エンドポイント：業務空間ユーザーは自分の専用ドメインを、それ以外はデフォルトを使用
+DASHSCOPE_BASE_HTTP_URL=https://dashscope.aliyuncs.com/api/v1
+DASHSCOPE_BASE_WS_URL=wss://dashscope.aliyuncs.com/api-ws/v1/inference
+
+# モデルと音色
+DASHSCOPE_ASR_MODEL=qwen-audio-3.0-asr-flash-streaming   # 音声→文字
+DASHSCOPE_TTS_MODEL=qwen-audio-3.0-tts-flash             # 文字→音声
+DASHSCOPE_TTS_VOICE=longanhuan_v3.6                       # 音色
 ```
 
-未設定の場合は文字モードに自動で切り替わり、機能はそのまま利用できます。
+> `DASHSCOPE_API_KEY` 未設定時は音声ツリーホールが文字モードに自動で切り替わり、その他の機能はそのまま利用できます。
 
 セキュリティパラメータ：
 

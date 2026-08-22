@@ -100,7 +100,8 @@ app.js                   Casting interaction, three casting algorithms, scenario
 hexagrams.js             64 hexagrams, judgments, keywords, line texts, trigram mapping
 grad-context.js          Graduate/faculty scenario knowledge base (for divination prompts)
 counsel-context.js       Counseling prompts + long-term memory mechanism
-voice-context.js         Voice capability for the voice tree-hole (Qwen ASR/TTS placeholders)
+voice-context.js         Voice capability for the voice tree-hole (Qwen ASR/TTS)
+audio-processor.js       Browser-side microphone PCM capture (AudioWorklet)
 server.js                Node static server + three API endpoints
 validate-hexagrams.cjs   Hexagram data integrity check
 铜钱.m4a                 Coin sound effect (required at runtime; keep in root)
@@ -119,13 +120,31 @@ OPENAI_MODEL_1=gpt-4.1-mini
 
 Unnumbered configuration (`OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`) is also supported. Key/model changes take effect on the next request — no restart needed.
 
-The "Voice Treehole" uses Alibaba Qwen (DashScope) for voice; reserved:
+The "Voice Treehole" real-time voice conversation needs two Alibaba Cloud Bailian (DashScope) voice capabilities: **speech-to-text (real-time speech recognition, ASR)** and **text-to-speech (speech synthesis, TTS)** (the "brain" in between is still the OpenAI-compatible model above).
+
+**How to apply:**
+
+1. Sign in to the Bailian console: <https://bailian.console.aliyun.com/>
+2. Enable "Speech", including **real-time speech recognition** (ASR) and **speech synthesis** (TTS)
+3. Create an API key under "API-KEY", giving you `DASHSCOPE_API_KEY`
+4. Workspace users can find their workspace-specific domain (like `xxxx.cn-beijing.maas.aliyuncs.com`) in the console
+
+**Configuration (in `.env`; `DASHSCOPE_API_KEY` is required, the rest have defaults):**
 
 ```env
-DASHSCOPE_API_KEY=your_qwen_voice_key
+DASHSCOPE_API_KEY=your_key
+
+# Voice endpoints: workspace users use their own domain; others use the defaults
+DASHSCOPE_BASE_HTTP_URL=https://dashscope.aliyuncs.com/api/v1
+DASHSCOPE_BASE_WS_URL=wss://dashscope.aliyuncs.com/api-ws/v1/inference
+
+# Models & voice
+DASHSCOPE_ASR_MODEL=qwen-audio-3.0-asr-flash-streaming   # speech-to-text
+DASHSCOPE_TTS_MODEL=qwen-audio-3.0-tts-flash             # text-to-speech
+DASHSCOPE_TTS_VOICE=longanhuan_v3.6                       # voice
 ```
 
-When unset, the voice tree-hole falls back to text mode and remains fully functional.
+> Without `DASHSCOPE_API_KEY`, the voice tree-hole falls back to text mode.
 
 Security parameters:
 

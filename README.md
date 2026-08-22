@@ -100,7 +100,8 @@ app.js                   起卦交互、三种起卦算法、场景、历史、�
 hexagrams.js             64 卦、卦辞、关键词、六爻爻辞、八卦映射
 grad-context.js          研究生/青年教师场景知识库（注入算卦提示词）
 counsel-context.js       心理疏导提示词 + 长期记忆机制
-voice-context.js         倾听树洞的语音能力（通义千问 ASR/TTS 占位）
+voice-context.js         倾听树洞的语音能力（通义千问 ASR/TTS）
+audio-processor.js       浏览器端麦克风 PCM 采样（AudioWorklet）
 server.js                Node 静态服务 + 三个 API 接口
 validate-hexagrams.cjs   卦象数据完整性校验
 铜钱.m4a                 铜钱音效（运行时需要，保留在根目录）
@@ -119,13 +120,31 @@ OPENAI_MODEL_1=gpt-4.1-mini
 
 也兼容无编号配置（`OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`）。修改 Key 或模型后无需重启，下次请求自动生效。
 
-「倾听树洞」的语音对话使用阿里通义千问（DashScope/百炼），预留：
+「倾听树洞」的实时语音对话需要两段阿里云百炼（DashScope）的语音能力：**语音转文字（实时语音识别 ASR）** 和 **文字转语音（语音合成 TTS）**（中间的「大脑」仍是上面的 OpenAI 兼容大模型）。
+
+**申请步骤：**
+
+1. 登录阿里云百炼控制台：<https://bailian.console.aliyun.com/>
+2. 开通「语音服务」，分别开通**实时语音识别**（语音转文字）与**语音合成**（文字转语音）
+3. 在「API-KEY 管理」里创建 API Key，得到 `DASHSCOPE_API_KEY`
+4. 「业务空间」用户可在控制台看到专属域名（形如 `xxxx.cn-beijing.maas.aliyuncs.com`），下面配置里要用
+
+**配置（写在 `.env` 里；`DASHSCOPE_API_KEY` 必填，其余可用默认）：**
 
 ```env
-DASHSCOPE_API_KEY=你的通义千问语音key
+DASHSCOPE_API_KEY=你的通义千问APIKey
+
+# 语音接口域名：业务空间用户填自己的专属域名；个人用户用官方默认
+DASHSCOPE_BASE_HTTP_URL=https://dashscope.aliyuncs.com/api/v1
+DASHSCOPE_BASE_WS_URL=wss://dashscope.aliyuncs.com/api-ws/v1/inference
+
+# 模型与音色
+DASHSCOPE_ASR_MODEL=qwen-audio-3.0-asr-flash-streaming   # 语音转文字
+DASHSCOPE_TTS_MODEL=qwen-audio-3.0-tts-flash             # 文字转语音
+DASHSCOPE_TTS_VOICE=longanhuan_v3.6                       # 音色
 ```
 
-未配置时，倾听树洞自动降级为文字模式，功能不受影响。
+> 未配置 `DASHSCOPE_API_KEY` 时，倾听树洞自动降级为文字模式，其余功能不受影响。
 
 安全参数：
 
