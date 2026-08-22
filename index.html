@@ -1,18 +1,31 @@
 ﻿<!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>此心安处</title>
+    <script>
+      (function () {
+        var t = "light";
+        try {
+          t = localStorage.getItem("theme-v1") || t;
+          if (!localStorage.getItem("theme-v1") && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) t = "dark";
+        } catch (e) {}
+        document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+      })();
+    </script>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <nav class="top-nav" id="top-nav" aria-label="功能模块">
-      <button class="nav-btn active" data-module="landing" type="button" aria-pressed="true">首页</button>
-      <button class="nav-btn" data-module="divination" type="button" aria-pressed="false">周易算卦</button>
-      <button class="nav-btn" data-module="treehole" type="button" aria-pressed="false">心理树洞</button>
-      <button class="nav-btn" data-module="voice" type="button" aria-pressed="false">倾听树洞</button>
-      <button class="nav-btn" data-module="cognition" type="button" aria-pressed="false">看懂情绪</button>
+      <div class="nav-center">
+        <button class="nav-btn active" data-module="landing" type="button" aria-pressed="true">首页</button>
+        <button class="nav-btn" data-module="divination" type="button" aria-pressed="false">周易算卦</button>
+        <button class="nav-btn" data-module="treehole" type="button" aria-pressed="false">心理树洞</button>
+        <button class="nav-btn" data-module="voice" type="button" aria-pressed="false">倾听树洞</button>
+        <button class="nav-btn" data-module="cognition" type="button" aria-pressed="false">看懂情绪</button>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深浅色">🌙</button>
     </nav>
 
     <main class="landing-shell" id="landing-module">

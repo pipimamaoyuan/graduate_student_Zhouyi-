@@ -18,6 +18,33 @@ let cognitionTopic = "";
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
+// ---- 深浅色主题 ----
+const THEME_KEY = "theme-v1";
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  const toggle = $("#theme-toggle");
+  if (toggle) {
+    toggle.textContent = theme === "dark" ? "☀️" : "🌙";
+    toggle.setAttribute("aria-label", theme === "dark" ? "切换到浅色模式" : "切换到深色模式");
+  }
+  try { localStorage.setItem(THEME_KEY, theme); } catch (error) {}
+}
+
+function initTheme() {
+  let saved = "";
+  try { saved = localStorage.getItem(THEME_KEY); } catch (error) {}
+  if (!saved) {
+    saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  applyTheme(saved === "dark" ? "dark" : "light");
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  applyTheme(current === "dark" ? "light" : "dark");
+}
+
 const AUDIENCE_OPTIONS = [
   { value: "", label: "自动" },
   { value: "研究生", label: "研究生·博士生" },
@@ -777,6 +804,21 @@ function setModule(module) {
   $("#treehole-module").hidden = module !== "treehole";
   $("#voice-module").hidden = module !== "voice";
   $("#cognition-module").hidden = module !== "cognition";
+
+  const moduleShell = {
+    landing: "#landing-module",
+    divination: "#divination-module",
+    treehole: "#treehole-module",
+    voice: "#voice-module",
+    cognition: "#cognition-module"
+  }[module];
+  const shell = moduleShell ? $(moduleShell) : null;
+  if (shell) {
+    shell.classList.remove("module-enter");
+    void shell.offsetWidth; // 触发重排，重启动画
+    shell.classList.add("module-enter");
+  }
+
   if (module === "treehole") {
     renderVentList();
     renderChatThread();
@@ -1492,6 +1534,7 @@ async function submitCognition() {
 }
 
 function bindEvents() {
+  $("#theme-toggle").addEventListener("click", toggleTheme);
   $("#coin-toss").addEventListener("click", handlePrimaryAction);
   $("#reset-cast").addEventListener("click", resetCast);
   $("#cast-mode").addEventListener("click", (event) => {
@@ -1629,6 +1672,7 @@ renderTreeholeAudienceTags();
 renderVoiceAudienceTags();
 renderCognitionAudienceTags();
 renderCognitionTopics();
+initTheme();
 bindEvents();
 setCastMode("coin");
 resetCast();
